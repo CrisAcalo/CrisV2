@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────
+   THEME SYSTEM  –  Scalable CSS Custom Properties
+   Each theme is a class on <html>. The "default" is :root.
+   dark mode is controlled by next-themes adding `.dark`.
+   ───────────────────────────────────────────────────────── */
+
+@theme {
+  --font-sans: var(--font-inter), sans-serif;
+}
+
+/* ── THEME: Indigo (default) ──────────────────────────── */
+:root,
+[data-theme="indigo"] {
+  /* Brand accents */
+  --accent-h: 243;
+  --accent-s: 75%;
+  --accent-l: 59%;
+  --accent: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+  --accent-hover: hsl(var(--accent-h) var(--accent-s) 50%);
+  --accent-faint: hsl(var(--accent-h) var(--accent-s) 96%);
+  --accent-glow: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.25);
+
+  /* Surfaces */
+  --bg: #f0f4ff;
+  --bg-secondary: #e8eeff;
+  --surface: #ffffff;
+  --surface-raised: #f8f9ff;
+  --surface-border: #e2e8f8;
+
+  /* Text */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  /* Sidebar */
+  --sidebar-bg: #111827;
+  --sidebar-border: #1f2937;
+  --sidebar-text: #94a3b8;
+  --sidebar-text-hover: #f1f5f9;
+  --sidebar-active-bg: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.15);
+  --sidebar-active-text: var(--accent);
+  --sidebar-active-border: var(--accent);
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 4px 16px -2px rgb(0 0 0 / 0.06);
+  --shadow-raised: 0 4px 24px -4px rgb(99 102 241 / 0.12), 0 2px 8px -2px rgb(0 0 0 / 0.08);
+}
+
+/* ── DARK MODE overlay on Indigo theme ────────────────── */
+.dark,
+.dark[data-theme="indigo"] {
+  --bg: #0b0e1a;
+  --bg-secondary: #0f1323;
+  --surface: #131929;
+  --surface-raised: #1a2235;
+  --surface-border: #1e2d47;
+
+  --text-primary: #f0f4ff;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+
+  --accent-faint: hsl(var(--accent-h) var(--accent-s) 15%);
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 4px 16px -2px rgb(0 0 0 / 0.4);
+  --shadow-raised: 0 4px 24px -4px rgb(99 102 241 / 0.25), 0 2px 8px -2px rgb(0 0 0 / 0.3);
+}
+
+/* ── THEME: Teal (placeholder for future) ─────────────── */
+[data-theme="teal"] {
+  --accent-h: 174;
+  --accent-s: 72%;
+  --accent-l: 40%;
+  --accent: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+  --accent-hover: hsl(var(--accent-h) var(--accent-s) 35%);
+  --accent-faint: hsl(var(--accent-h) var(--accent-s) 96%);
+  --accent-glow: hsl(var(--accent-h) var(--accent-s) 50% / 0.25);
+}
+
+/* ── THEME: Rose (placeholder for future) ─────────────── */
+[data-theme="rose"] {
+  --accent-h: 336;
+  --accent-s: 84%;
+  --accent-l: 57%;
+  --accent: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+  --accent-hover: hsl(var(--accent-h) var(--accent-s) 50%);
+  --accent-faint: hsl(var(--accent-h) var(--accent-s) 97%);
+  --accent-glow: hsl(var(--accent-h) var(--accent-s) 57% / 0.25);
+}
+
+/* ─────────────────────────────────────────────────────────
+   BASE STYLES
+   ───────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────────────────────
+   UTILITY CLASSES
+   ───────────────────────────────────────────────────────── */
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dark .glass {
+  background: rgba(15, 20, 40, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Neon glow effect for accent elements */
+.glow-accent {
+  box-shadow: 0 0 16px var(--accent-glow), 0 0 48px hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.1);
+}
+
+.glow-accent-text {
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* Surface cards using CSS vars */
+.card-surface {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow-card);
+  border-radius: 14px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-surface:hover {
+  box-shadow: var(--shadow-raised);
+}
+
+/* Gradient text using accent color */
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent) 0%, hsl(var(--accent-h) calc(var(--accent-s) + 10%) 75%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Accent button base */
+.btn-accent {
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.btn-accent:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.btn-accent:active {
+  transform: scale(0.98);
+}
+
+/* ─────────────────────────────────────────────────────────
+   CUSTOM SCROLLBAR
+   ───────────────────────────────────────────────────────── */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--surface-border);
+  border-radius: 99px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Apply custom scrollbar globally */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-border) transparent;
+}
+
+/* ─────────────────────────────────────────────────────────
+   ANIMATIONS
+   ───────────────────────────────────────────────────────── */
+
+@keyframes pulse-accent {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-raised) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────
+   BUTTON  –  Single class reads CSS custom properties
+   Button.tsx sets --_bg, --_fg, --_border, etc. via style.
+   This approach is immune to Tailwind purging entirely.
+   ───────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+  text-decoration: none;
+  /* Read theme-channel custom props */
+  background: var(--_bg, transparent);
+  color: var(--_fg, inherit);
+  border: var(--_border, none);
+  box-shadow: var(--_shadow, none);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--_bg-h, var(--_bg, transparent));
+  color: var(--_fg-h, var(--_fg, inherit));
+  box-shadow: var(--_shadow-h, none);
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-glow, rgba(99, 102, 241, 0.35));
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

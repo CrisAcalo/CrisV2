@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  BASIC
+}
+
+model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+  role         Role   @default(BASIC)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── Skill ────────────────────────────────────────────────────────────────────
+// normalizedName = lowercase + strip spaces/dots/dashes → unique key
+// isPublic controls visibility on the portfolio Skills section
+
+model Skill {
+  id             String  @id @default(uuid())
+  name           String
+  normalizedName String  @unique
+  isFromLinkedIn Boolean @default(false)
+  isPublic       Boolean @default(true)
+
+  experiences ExperienceSkill[]
+  educations  EducationSkill[]
+  projects    ProjectSkill[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── Explicit join tables ─────────────────────────────────────────────────────
+// Using explicit tables (not Prisma implicit m:n) so that cascade-deleting
+// an Experience/Education/Project never touches Skill rows.
+
+model ExperienceSkill {
+  experienceId String
+  skillId      String
+
+  experience Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  skill      Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([experienceId, skillId])
+}
+
+model EducationSkill {
+  educationId String
+  skillId     String
+
+  education Education @relation(fields: [educationId], references: [id], onDelete: Cascade)
+  skill     Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([educationId, skillId])
+}
+
+model ProjectSkill {
+  projectId String
+  skillId   String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, skillId])
+}
+
+// ─── Project ─────────────────────────────────────────────────────────────────
+// techStack removed — skills now via ProjectSkill
+
+model Project {
+  id          String  @id @default(uuid())
+  title       String
+  description String
+  imageUrl    String?
+  repoUrl     String?
+  liveUrl     String?
+  isPublished Boolean @default(false)
+
+  skills ProjectSkill[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── Experience ───────────────────────────────────────────────────────────────
+
+model Experience {
+  id                     String  @id @default(uuid())
+  role                   String
+  company                String
+  startDate              DateTime
+  endDate                DateTime?
+  description            String?
+  isImportedFromLinkedIn Boolean @default(false)
+
+  skills ExperienceSkill[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── Education ────────────────────────────────────────────────────────────────
+
+model Education {
+  id                     String    @id @default(uuid())
+  institution            String
+  degree                 String
+  startDate              DateTime
+  endDate                DateTime?
+  isImportedFromLinkedIn Boolean   @default(false)
+
+  skills EducationSkill[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── Certificate ──────────────────────────────────────────────────────────────
+
+model Certificate {
+  id                     String   @id @default(uuid())
+  name                   String
+  issuingOrganization    String
+  issueDate              DateTime
+  credentialUrl          String?
+  isImportedFromLinkedIn Boolean  @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── Message ──────────────────────────────────────────────────────────────────
+
+model Message {
+  id          String  @id @default(uuid())
+  senderName  String
+  senderEmail String
+  content     String
+  isRead      Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// ─── SystemConfiguration ──────────────────────────────────────────────────────
+
+model SystemConfiguration {
+  id          String   @id @default("default")
+  linkedInUrn String?
+  theme       String   @default("system")
+
+  updatedAt DateTime @updatedAt
+}
