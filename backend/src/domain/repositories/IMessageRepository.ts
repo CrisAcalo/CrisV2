@@ -1,7 +1,7 @@
 import { Message } from '../entities';
 
 export interface IMessageRepository {
-    findAll(): Promise<Message[]>;
+    findAll(includeDeleted?: boolean): Promise<Message[]>;
     findById(id: string): Promise<Message | null>;
     create(data: Omit<Message, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>): Promise<Message>;
     update(id: string, data: Partial<Omit<Message, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>>): Promise<Message | null>;

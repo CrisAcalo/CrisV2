@@ -5,7 +5,8 @@ export class MessageController {
     constructor(private messageUseCases: MessageUseCases) { }
 
     getAllMessages = async (req: Request, res: Response): Promise<void> => {
-        const messages = await this.messageUseCases.getAllMessages();
+        const includeDeleted = req.query.deleted === 'true';
+        const messages = await this.messageUseCases.getAllMessages(includeDeleted);
         res.json({ status: 'success', data: messages });
     }
 
@@ -19,6 +20,7 @@ export class MessageController {
         const message = await this.messageUseCases.createMessage({
             senderName: req.body.senderName,
             senderEmail: req.body.senderEmail,
+            subject: req.body.subject,
             content: req.body.content
         });
         res.status(201).json({ status: 'success', data: message });

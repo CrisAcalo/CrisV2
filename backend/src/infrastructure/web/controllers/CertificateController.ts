@@ -5,7 +5,8 @@ export class CertificateController {
     constructor(private certificateUseCases: CertificateUseCases) { }
 
     getAllCertificates = async (req: Request, res: Response): Promise<void> => {
-        const certificates = await this.certificateUseCases.getAllCertificates();
+        const includeDeleted = req.query.deleted === 'true';
+        const certificates = await this.certificateUseCases.getAllCertificates(includeDeleted);
         res.json({ status: 'success', data: certificates });
     }
 

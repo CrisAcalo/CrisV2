@@ -2,9 +2,15 @@ import { ISkillRepository } from '../../domain/repositories/ISkillRepository';
 import { NotFoundError, ConflictError } from '../../domain/errors/AppError';
 import { Skill } from '../../domain/entities';
 import { normalizeSkillName } from '../../domain/utils/normalizeSkillName';
+import { prisma } from '../../infrastructure/database/prisma/client';
 
 export type CreateSkillDTO = { name: string; isFromLinkedIn?: boolean; isPublic?: boolean };
 export type UpdateSkillDTO = Partial<Pick<Skill, 'name' | 'isFromLinkedIn' | 'isPublic'>>;
+export type SkillRelationsDTO = {
+    projectIds?: string[];
+    experienceIds?: string[];
+    educationIds?: string[];
+};
 
 export class SkillUseCases {
     constructor(private skillRepository: ISkillRepository) { }
@@ -37,6 +43,46 @@ export class SkillUseCases {
         const updated = await this.skillRepository.update(id, data);
         if (!updated) throw new NotFoundError('Skill no encontrada');
         return updated;
+    }
+
+    async updateRelations(id: string, relations: SkillRelationsDTO): Promise<Skill> {
+        const skill = await this.skillRepository.findById(id);
+        if (!skill) throw new NotFoundError('Skill no encontrada');
+
+        // Replace project relations
+        if (relations.projectIds !== undefined) {
+            await prisma.projectSkill.deleteMany({ where: { skillId: id } });
+            if (relations.projectIds.length > 0) {
+                await prisma.projectSkill.createMany({
+                    data: relations.projectIds.map(projectId => ({ skillId: id, projectId })),
+                    skipDuplicates: true,
+                });
+            }
+        }
+
+        // Replace experience relations
+        if (relations.experienceIds !== undefined) {
+            await prisma.experienceSkill.deleteMany({ where: { skillId: id } });
+            if (relations.experienceIds.length > 0) {
+                await prisma.experienceSkill.createMany({
+                    data: relations.experienceIds.map(experienceId => ({ skillId: id, experienceId })),
+                    skipDuplicates: true,
+                });
+            }
+        }
+
+        // Replace education relations
+        if (relations.educationIds !== undefined) {
+            await prisma.educationSkill.deleteMany({ where: { skillId: id } });
+            if (relations.educationIds.length > 0) {
+                await prisma.educationSkill.createMany({
+                    data: relations.educationIds.map(educationId => ({ skillId: id, educationId })),
+                    skipDuplicates: true,
+                });
+            }
+        }
+
+        return (await this.skillRepository.findById(id))!;
     }
 
     async deleteSkill(id: string): Promise<void> {

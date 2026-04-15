@@ -61,7 +61,7 @@ export class LinkedInService implements ILinkedInService {
         return new Date(dateStr);
     }
 
-    mapExperiences(rawExp: FreshLinkedInExperience[]): Experience[] {
+    mapExperiences(rawExp: FreshLinkedInExperience[]): (Experience & { skillNames: string[] })[] {
         return rawExp.map(exp => ({
             id: '',
             role: exp.title,
@@ -70,10 +70,11 @@ export class LinkedInService implements ILinkedInService {
             endDate: this.parseDateStr(exp.date?.end, true),
             description: exp.description || null,
             isImportedFromLinkedIn: true,
+            skillNames: exp.skills ?? [],
         }));
     }
 
-    mapEducations(rawEdu: FreshLinkedInEducation[]): Education[] {
+    mapEducations(rawEdu: FreshLinkedInEducation[]): (Education & { skillNames: string[] })[] {
         return rawEdu.map(edu => ({
             id: '',
             institution: edu.school,
@@ -81,6 +82,7 @@ export class LinkedInService implements ILinkedInService {
             startDate: this.parseDateStr(edu.date?.start) || new Date(),
             endDate: this.parseDateStr(edu.date?.end, true),
             isImportedFromLinkedIn: true,
+            skillNames: edu.skills ?? [],
         }));
     }
 

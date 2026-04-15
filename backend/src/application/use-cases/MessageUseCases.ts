@@ -1,6 +1,7 @@
 import { IMessageRepository } from '../../domain/repositories/IMessageRepository';
 import { NotFoundError } from '../../domain/errors/AppError';
 import { Message } from '../../domain/entities';
+import { sendContactEmail } from '../../infrastructure/services/EmailService';
 
 export type CreateMessageDTO = Omit<Message, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
 export type UpdateMessageDTO = Partial<CreateMessageDTO>;
@@ -8,8 +9,8 @@ export type UpdateMessageDTO = Partial<CreateMessageDTO>;
 export class MessageUseCases {
     constructor(private messageRepository: IMessageRepository) { }
 
-    async getAllMessages(): Promise<Message[]> {
-        return this.messageRepository.findAll();
+    async getAllMessages(includeDeleted: boolean = false): Promise<Message[]> {
+        return this.messageRepository.findAll(includeDeleted);
     }
 
     async getMessageById(id: string): Promise<Message> {
@@ -19,10 +20,23 @@ export class MessageUseCases {
     }
 
     async createMessage(data: Omit<CreateMessageDTO, 'isRead'>): Promise<Message> {
-        return this.messageRepository.create({
+        // 1. Persist in DB
+        const message = await this.messageRepository.create({
             ...data,
-            isRead: false
+            isRead: false,
         });
+
+        // 2. Send email notification (non-blocking — failure won't reject the request)
+        sendContactEmail({
+            senderName: data.senderName,
+            senderEmail: data.senderEmail,
+            subject: data.subject,
+            content: data.content,
+        }).catch((err) => {
+            console.warn('[EmailService] Failed to send notification email:', err?.message);
+        });
+
+        return message;
     }
 
     async updateMessage(id: string, data: UpdateMessageDTO): Promise<Message> {

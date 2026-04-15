@@ -333,4 +333,57 @@ router.patch('/:id/restore',
     skillController.restoreSkill,
 );
 
+// ─── PATCH /api/skills/:id/relations ─────────────────────────────────────────
+/**
+ * @swagger
+ * /api/skills/{id}/relations:
+ *   patch:
+ *     summary: Update the entity relations of a skill (projects, experiences, educations)
+ *     tags: [Skills]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               projectIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *               experienceIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *               educationIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *     responses:
+ *       200:
+ *         description: Relations updated — returns updated skill with all relations
+ *       404:
+ *         description: Skill not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden — admin role required
+ */
+router.patch('/:id/relations',
+    authGuard, requireAdmin,
+    skillController.updateRelations,
+);
+
 export default router;

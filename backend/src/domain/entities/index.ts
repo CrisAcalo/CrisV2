@@ -92,6 +92,7 @@ export interface Message {
     id: string;
     senderName: string;
     senderEmail: string;
+    subject: string;
     content: string;
     isRead: boolean;
     createdAt?: Date;

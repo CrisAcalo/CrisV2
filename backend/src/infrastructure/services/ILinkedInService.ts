@@ -5,12 +5,14 @@ export interface FreshLinkedInExperience {
     company: { name: string; };
     date?: { start?: string; end?: string; };
     description?: string;
+    skills?: string[];
 }
 
 export interface FreshLinkedInEducation {
     school: string;
     degree?: string;
     date?: { start?: string; end?: string; };
+    skills?: string[];
 }
 
 export interface FreshLinkedInCertificate {
@@ -25,7 +27,7 @@ export interface ILinkedInService {
     fetchEducations(urn: string): Promise<FreshLinkedInEducation[]>;
     fetchCertificates(urn: string): Promise<FreshLinkedInCertificate[]>;
 
-    mapExperiences(rawExp: FreshLinkedInExperience[]): Experience[];
-    mapEducations(rawEdu: FreshLinkedInEducation[]): Education[];
+    mapExperiences(rawExp: FreshLinkedInExperience[]): (Experience & { skillNames: string[] })[];
+    mapEducations(rawEdu: FreshLinkedInEducation[]): (Education & { skillNames: string[] })[];
     mapCertificates(rawCert: FreshLinkedInCertificate[]): Certificate[];
 }

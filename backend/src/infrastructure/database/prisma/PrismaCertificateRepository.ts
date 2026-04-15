@@ -3,9 +3,9 @@ import { ICertificateRepository } from '../../../domain/repositories/ICertificat
 import { Certificate } from '../../../domain/entities';
 
 export class PrismaCertificateRepository implements ICertificateRepository {
-    async findAll(): Promise<Certificate[]> {
+    async findAll(includeDeleted: boolean = false): Promise<Certificate[]> {
         return prisma.certificate.findMany({
-            where: { deletedAt: null },
+            where: { deletedAt: includeDeleted ? { not: null } : null },
             orderBy: { issueDate: 'desc' }
         });
     }

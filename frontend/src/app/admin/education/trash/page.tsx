@@ -8,10 +8,7 @@ import { ArrowLeft, RefreshCw, Trash2, Inbox } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
-function formatDate(d?: string | null) {
-  if (!d) return 'En curso';
-  return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
-}
+import { formatFriendlyDate } from '../../../../presentation/utils/dateUtils';
 
 export default function AdminEducationTrashPage() {
   const router = useRouter();
@@ -84,17 +81,20 @@ export default function AdminEducationTrashPage() {
               ) : items.map((item, i) => (
                 <motion.tr
                   key={item.id}
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
+                  transition={{ delay: i * 0.025 }}
+                  className="transition-colors"
                   style={{ borderBottom: '1px solid var(--surface-border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-raised)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
                   <td className="px-6 py-4">
                     <div className="font-medium line-through opacity-60" style={{ color: 'var(--text-primary)' }}>{item.degree}</div>
                     <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.institution}</div>
                   </td>
                   <td className="px-6 py-4 text-sm whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
-                    {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                    {formatFriendlyDate(item.startDate)} – {formatFriendlyDate(item.endDate)}
                   </td>
                   <td className="px-6 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>
                     {item.deletedAt ? new Date(item.deletedAt).toLocaleDateString('es-ES') : 'N/A'}

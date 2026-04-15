@@ -17,7 +17,7 @@ export default function AdminProjectsPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  
+
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
@@ -49,7 +49,7 @@ export default function AdminProjectsPage() {
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center text-slate-500">Cargando proyectos...</div>;
+  if (isLoading) return <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Cargando proyectos...</div>;
   if (isError) return <div className="p-8 text-center text-red-500">Error cargando proyectos.</div>;
 
   const projects = data?.data || [];
@@ -58,8 +58,8 @@ export default function AdminProjectsPage() {
     <div className="max-w-6xl mx-auto pb-10">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Proyectos</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">Administra tu portafolio de proyectos públicos.</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Proyectos</h1>
+          <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>Administra tu portafolio de proyectos públicos.</p>
         </div>
         <div className="flex gap-3">
           <Button variant="danger-light" onClick={() => router.push('/admin/projects/trash')}>
@@ -71,56 +71,60 @@ export default function AdminProjectsPage() {
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
+      <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+          <table className="w-full text-left text-sm">
+            <thead style={{ background: 'var(--surface-raised)', borderBottom: '1px solid var(--surface-border)' }}>
               <tr>
-                <th className="px-6 py-4 font-semibold">Proyecto</th>
-                <th className="px-6 py-4 font-semibold">Estado</th>
-                <th className="px-6 py-4 font-semibold">Tech Stack</th>
-                <th className="px-6 py-4 font-semibold text-right">Acciones</th>
+                <th className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Proyecto</th>
+                <th className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Estado</th>
+                <th className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Skills</th>
+                <th className="px-6 py-4 font-semibold text-right" style={{ color: 'var(--text-secondary)' }}>Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+            <tbody>
               {projects.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
+                  <td colSpan={4} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                     <p>No tienes proyectos activos aún.</p>
                     <Button variant="ghost" className="mt-2" onClick={handleCreate}>Crear tu primer proyecto</Button>
                   </td>
                 </tr>
               ) : (
                 projects.map((project, index) => (
-                  <motion.tr 
+                  <motion.tr
                     key={project.id}
-                    initial={{ opacity: 0, y: 5 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                    transition={{ delay: index * 0.025 }}
+                    className="transition-colors"
+                    style={{ borderBottom: '1px solid var(--surface-border)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-raised)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900 dark:text-white max-w-[250px] truncate">{project.title}</div>
-                      <div className="text-slate-500 dark:text-slate-400 max-w-[250px] truncate" title={project.description || ''}>
-                        {project.description || <span className="italic text-slate-400">Sin descripción</span>}
+                      <div className="font-medium max-w-[250px] truncate" style={{ color: 'var(--text-primary)' }}>{project.title}</div>
+                      <div className="text-sm max-w-[250px] truncate" style={{ color: 'var(--text-secondary)' }} title={project.description || ''}>
+                        {project.description || <span className="italic opacity-60">Sin descripción</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${project.isPublished ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium`} style={{
+                        background: project.isPublished ? 'rgba(34, 197, 94, 0.1)' : 'var(--surface-raised)',
+                        color: project.isPublished ? 'rgb(34, 197, 94)' : 'var(--text-secondary)'
+                      }}>
                         {project.isPublished ? 'Publicado' : 'Borrador'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-1">
-                        {project.techStack?.slice(0, 3).map((tech: string) => (
-                          <span key={tech} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-400 font-mono">
-                            {tech}
+                      <div className="flex flex-wrap gap-1">
+                        {project.skills?.slice(0, 3).map(skill => (
+                          <span key={skill.id} className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--surface-raised)', color: 'var(--text-secondary)' }}>
+                            {skill.name}
                           </span>
                         ))}
-                        {project.techStack?.length > 3 && (
-                          <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-400">
-                            +{project.techStack.length - 3}
-                          </span>
+                        {(project.skills?.length ?? 0) > 3 && (
+                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>+{project.skills!.length - 3}</span>
                         )}
                       </div>
                     </td>
@@ -143,10 +147,10 @@ export default function AdminProjectsPage() {
       </Card>
 
       {/* CREATE / EDIT MODAL */}
-      <ProjectFormModal 
-        isOpen={isFormOpen} 
-        onClose={() => setIsFormOpen(false)} 
-        projectToEdit={editingProject} 
+      <ProjectFormModal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        projectToEdit={editingProject}
       />
 
       {/* CONFIRM SOFT DELETE MODAL */}

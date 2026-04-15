@@ -3,9 +3,9 @@ import { IMessageRepository } from '../../../domain/repositories/IMessageReposit
 import { Message } from '../../../domain/entities';
 
 export class PrismaMessageRepository implements IMessageRepository {
-    async findAll(): Promise<Message[]> {
+    async findAll(includeDeleted: boolean = false): Promise<Message[]> {
         return prisma.message.findMany({
-            where: { deletedAt: null },
+            where: { deletedAt: includeDeleted ? { not: null } : null },
             orderBy: { createdAt: 'desc' }
         });
     }

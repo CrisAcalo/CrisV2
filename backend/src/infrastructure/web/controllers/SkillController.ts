@@ -39,4 +39,9 @@ export class SkillController {
         await this.skillUseCases.restoreSkill(req.params['id'] as string);
         res.status(204).send();
     }
+
+    updateRelations = async (req: Request, res: Response): Promise<void> => {
+        const skill = await this.skillUseCases.updateRelations(req.params['id'] as string, req.body);
+        res.json({ status: 'success', data: skill });
+    }
 }

@@ -4,12 +4,29 @@ export interface User {
     role: 'ADMIN' | 'BASIC';
 }
 
+export interface SkillRef {
+    id: string;
+    name: string;
+}
+
+export interface Skill {
+    id: string;
+    name: string;
+    normalizedName: string;
+    isFromLinkedIn: boolean;
+    isPublic: boolean;
+    experiences?: Array<{ id: string; role: string; company: string }>;
+    educations?: Array<{ id: string; institution: string; degree: string }>;
+    projects?: Array<{ id: string; title: string }>;
+    deletedAt?: string | null;
+}
+
 export interface Project {
     id: string;
     title: string;
     description: string;
     imageUrl?: string;
-    techStack: string[];
+    skills: SkillRef[];
     repoUrl?: string;
     liveUrl?: string;
     isPublished: boolean;
@@ -24,6 +41,7 @@ export interface Experience {
     endDate?: string | null;
     description?: string | null;
     isImportedFromLinkedIn: boolean;
+    skills?: SkillRef[];
     deletedAt?: string | null;
 }
 
@@ -34,6 +52,7 @@ export interface Education {
     startDate: string;
     endDate?: string | null;
     isImportedFromLinkedIn?: boolean;
+    skills?: SkillRef[];
     deletedAt?: string | null;
 }
 
@@ -44,6 +63,18 @@ export interface Certificate {
     issueDate: Date | string;
     credentialUrl?: string | null;
     isImportedFromLinkedIn?: boolean;
+    deletedAt?: string | null;
+}
+
+export interface Message {
+    id: string;
+    senderName: string;
+    senderEmail: string;
+    subject: string;
+    content: string;
+    isRead: boolean;
+    createdAt: Date;
+    deletedAt?: string | null;
 }
 
 export interface SystemConfiguration {

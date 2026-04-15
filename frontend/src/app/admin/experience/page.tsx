@@ -5,15 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useExperiences, useSoftDeleteExperience } from '../../../presentation/hooks/useHistory';
 import { Button, Card, ConfirmModal } from '../../../presentation/components/common';
 import { ExperienceFormModal } from '../../../presentation/components/admin/ExperienceFormModal';
-import { Plus, Edit2, Trash2, ArchiveRestore, Briefcase } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArchiveRestore, Briefcase, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Experience } from '../../../domain/entities';
 
-function formatDate(d?: string | null) {
-  if (!d) return 'Actualidad';
-  return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
-}
+import { formatFriendlyDate } from '../../../presentation/utils/dateUtils';
 
 export default function AdminExperiencePage() {
   const router = useRouter();
@@ -42,7 +39,7 @@ export default function AdminExperiencePage() {
   };
 
   if (isLoading) return <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Cargando experiencias...</div>;
-  if (isError)   return <div className="p-8 text-center text-red-500">Error cargando experiencias.</div>;
+  if (isError) return <div className="p-8 text-center text-red-500">Error cargando experiencias.</div>;
 
   const items = data?.data || [];
 
@@ -89,32 +86,39 @@ export default function AdminExperiencePage() {
               ) : items.map((item, i) => (
                 <motion.tr
                   key={item.id}
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  style={{ borderBottom: '1px solid var(--surface-border)' }}
+                  transition={{ delay: i * 0.025 }}
                   className="transition-colors"
+                  style={{ borderBottom: '1px solid var(--surface-border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-raised)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 min-w-[180px] w-1/4">
                     <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{item.role}</div>
                     <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.company}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full"
                       style={{ background: 'var(--accent-faint)', color: 'var(--accent)' }}>
-                      {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                      {formatFriendlyDate(item.startDate)} – {formatFriendlyDate(item.endDate)}
                     </span>
                   </td>
                   <td className="px-6 py-4 max-w-xs">
-                    <p className="truncate text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <p className="text-sm whitespace-normal break-words line-clamp-3" style={{ color: 'var(--text-secondary)' }}>
                       {item.description || <span className="italic opacity-60">Sin descripción</span>}
                     </p>
                   </td>
                   <td className="px-6 py-4 text-center">
                     {item.isImportedFromLinkedIn ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-blue-500/10 text-blue-400">Sí</span>
+                      <Linkedin size={15} className="mx-auto text-[#0a66c2]" />
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full" style={{ background: 'var(--surface-raised)', color: 'var(--text-muted)' }}>No</span>
+                      <span className="relative inline-flex mx-auto">
+                        <Linkedin size={15} className="text-red-500 opacity-70" />
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="block w-[140%] h-[1.5px] bg-red-500 rotate-45 rounded-full" />
+                        </span>
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">

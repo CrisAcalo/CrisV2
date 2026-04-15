@@ -10,9 +10,17 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const sizeClass: Record<string, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl',
+};
+
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,27 +50,32 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm dark:bg-slate-950/80"
+            className="fixed inset-0 backdrop-blur-sm"
+            style={{ background: 'rgba(0,0,0,0.5)' }}
           />
           <motion.div
             ref={modalRef}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+            className={`relative w-full ${sizeClass[size]} overflow-hidden rounded-2xl shadow-2xl text-left align-middle`}
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--surface-border)',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+            }}
           >
             <div className="flex items-center justify-between mb-5 pt-6 px-6">
-              <h3 className="text-xl font-bold leading-6 text-slate-900 dark:text-white">
+              <h3 className="text-xl font-bold leading-6" style={{ color: 'var(--text-primary)' }}>
                 {title}
               </h3>
               <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-10 w-10 rounded-full">
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto p-6 custom-scrollbar">
+            <div className="max-h-[70vh] overflow-y-auto px-6 pb-6 custom-scrollbar">
               {children}
             </div>
-            
           </motion.div>
         </div>
       )}

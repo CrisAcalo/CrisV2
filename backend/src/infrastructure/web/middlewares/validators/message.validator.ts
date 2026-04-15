@@ -4,6 +4,7 @@ export const createMessageSchema = z.object({
     body: z.object({
         senderName: z.string().min(1, 'El nombre es obligatorio'),
         senderEmail: z.string().email('Correo electrónico no válido'),
+        subject: z.string().min(5, 'El asunto debe tener al menos 5 caracteres'),
         content: z.string().min(10, 'El mensaje debe tener al menos 10 caracteres')
     })
 });

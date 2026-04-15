@@ -1,7 +1,7 @@
 import { Certificate } from '../entities';
 
 export interface ICertificateRepository {
-    findAll(): Promise<Certificate[]>;
+    findAll(includeDeleted?: boolean): Promise<Certificate[]>;
     findById(id: string): Promise<Certificate | null>;
     create(data: Omit<Certificate, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>): Promise<Certificate>;
     update(id: string, data: Partial<Omit<Certificate, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>>): Promise<Certificate | null>;

@@ -46,7 +46,7 @@ export default function AdminProjectsTrashPage() {
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center text-slate-500">Cargando la papelera...</div>;
+  if (isLoading) return <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Cargando la papelera...</div>;
   if (isError) return <div className="p-8 text-center text-red-500">Error cargando papelera.</div>;
 
   // Filter out any active projects just in case backend misbehaves (although backend handles it)
@@ -61,51 +61,52 @@ export default function AdminProjectsTrashPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <button onClick={() => router.back()} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition">
-              <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <button onClick={() => router.back()} className="p-1 rounded-full transition-colors hover:bg-[var(--surface-raised)]">
+              <ArrowLeft className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
             </button>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              Papelera de Proyectos
-            </h1>
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Papelera de Proyectos</h1>
           </div>
-          <p className="text-slate-600 dark:text-slate-400 mt-1 pl-8">Los proyectos aquí pueden ser restaurados o eliminados permanentemente.</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Los proyectos aquí pueden ser restaurados o eliminados permanentemente.</p>
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
+      <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+          <table className="w-full text-left text-sm">
+            <thead style={{ background: 'var(--surface-raised)', borderBottom: '1px solid var(--surface-border)' }}>
               <tr>
-                <th className="px-6 py-4 font-semibold">Proyecto</th>
-                <th className="px-6 py-4 font-semibold">Eliminado (Soft)</th>
-                <th className="px-6 py-4 font-semibold text-right">Acciones (Irreversible)</th>
+                <th className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Proyecto</th>
+                <th className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Eliminado el</th>
+                <th className="px-6 py-4 font-semibold text-right" style={{ color: 'var(--text-secondary)' }}>Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+            <tbody>
               {projects.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-10 text-center text-slate-500">
+                  <td colSpan={3} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                     <p>La papelera está vacía.</p>
                   </td>
                 </tr>
               ) : (
                 projects.map((project, index) => (
-                  <motion.tr 
+                  <motion.tr
                     key={project.id}
-                    initial={{ opacity: 0, y: 5 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                    transition={{ delay: index * 0.025 }}
+                    className="transition-colors"
+                    style={{ borderBottom: '1px solid var(--surface-border)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-raised)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900 dark:text-white line-through opacity-70 max-w-[250px] truncate">{project.title}</div>
-                      <div className="text-slate-500 dark:text-slate-400 max-w-[250px] truncate" title={project.description || ''}>
-                        {project.description || <span className="italic text-slate-400">Sin descripción</span>}
+                      <div className="font-medium line-through opacity-70 max-w-[250px] truncate" style={{ color: 'var(--text-primary)' }}>{project.title}</div>
+                      <div className="text-sm max-w-[250px] truncate" style={{ color: 'var(--text-secondary)' }} title={project.description || ''}>
+                        {project.description || <span className="italic opacity-60">Sin descripción</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
-                      {project.deletedAt ? new Date(project.deletedAt).toLocaleDateString() : 'N/A'}
+                    <td className="px-6 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {project.deletedAt ? new Date(project.deletedAt).toLocaleDateString('es-ES') : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">

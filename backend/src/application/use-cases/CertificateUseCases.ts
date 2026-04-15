@@ -8,8 +8,8 @@ export type UpdateCertificateDTO = Partial<CreateCertificateDTO>;
 export class CertificateUseCases {
     constructor(private certificateRepository: ICertificateRepository) { }
 
-    async getAllCertificates(): Promise<Certificate[]> {
-        return this.certificateRepository.findAll();
+    async getAllCertificates(includeDeleted: boolean = false): Promise<Certificate[]> {
+        return this.certificateRepository.findAll(includeDeleted);
     }
 
     async getCertificateById(id: string): Promise<Certificate> {

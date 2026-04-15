@@ -5,15 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useEducations, useSoftDeleteEducation } from '../../../presentation/hooks/useHistory';
 import { Button, Card, ConfirmModal } from '../../../presentation/components/common';
 import { EducationFormModal } from '../../../presentation/components/admin/EducationFormModal';
-import { Plus, Edit2, Trash2, ArchiveRestore, GraduationCap } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArchiveRestore, GraduationCap, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Education } from '../../../domain/entities';
 
-function formatDate(d?: string | null) {
-  if (!d) return 'En curso';
-  return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
-}
+import { formatFriendlyDate } from '../../../presentation/utils/dateUtils';
 
 export default function AdminEducationPage() {
   const router = useRouter();
@@ -42,7 +39,7 @@ export default function AdminEducationPage() {
   };
 
   if (isLoading) return <div className="p-8 text-center" style={{ color: 'var(--text-muted)' }}>Cargando educación...</div>;
-  if (isError)   return <div className="p-8 text-center text-red-500">Error cargando educación.</div>;
+  if (isError) return <div className="p-8 text-center text-red-500">Error cargando educación.</div>;
 
   const items = data?.data || [];
 
@@ -72,13 +69,14 @@ export default function AdminEducationPage() {
               <tr>
                 <th className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Título / Institución</th>
                 <th className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Período</th>
+                <th className="px-6 py-4 font-semibold text-center" style={{ color: 'var(--text-secondary)' }}>LinkedIn</th>
                 <th className="px-6 py-4 font-semibold text-right" style={{ color: 'var(--text-secondary)' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center" style={{ color: 'var(--text-muted)' }}>
+                  <td colSpan={4} className="px-6 py-12 text-center" style={{ color: 'var(--text-muted)' }}>
                     <GraduationCap className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     <p>No hay registros de educación.</p>
                     <Button variant="ghost" className="mt-3" onClick={handleCreate}>Agregar primera educación</Button>
@@ -87,10 +85,12 @@ export default function AdminEducationPage() {
               ) : items.map((item, i) => (
                 <motion.tr
                   key={item.id}
-                  initial={{ opacity: 0, y: 4 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
+                  transition={{ delay: i * 0.025 }}
                   style={{ borderBottom: '1px solid var(--surface-border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-raised)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
                   className="transition-colors"
                 >
                   <td className="px-6 py-4">
@@ -100,8 +100,20 @@ export default function AdminEducationPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full"
                       style={{ background: 'var(--accent-faint)', color: 'var(--accent)' }}>
-                      {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                      {formatFriendlyDate(item.startDate)} – {formatFriendlyDate(item.endDate)}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {item.isImportedFromLinkedIn ? (
+                      <Linkedin size={15} className="mx-auto text-[#0a66c2]" />
+                    ) : (
+                      <span className="relative inline-flex mx-auto">
+                        <Linkedin size={15} className="text-red-500 opacity-70" />
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="block w-[140%] h-[1.5px] bg-red-500 rotate-45 rounded-full" />
+                        </span>
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
