@@ -9,49 +9,64 @@ export class LinkedInService implements ILinkedInService {
     private readonly BASE_URL = `https://${this.API_HOST}/api/v1/user`;
 
     private getHeaders() {
-        if (!env.LINKEDIN_API_TOKEN) throw new Error('LINKEDIN_API_TOKEN is missing');
+        const token = env.LINKEDIN_API_TOKEN;
+        console.log(`[LinkedInService] Checking Token: ${token ? 'PRESENT (ends in ...' + token.slice(-4) + ')' : 'MISSING'}`);
+        if (!token) throw new Error('LINKEDIN_API_TOKEN is missing in environment variables');
+        
         return {
-            'x-rapidapi-key': env.LINKEDIN_API_TOKEN,
+            'x-rapidapi-key': token,
             'x-rapidapi-host': this.API_HOST
         };
     }
 
     async fetchExperiences(urn: string): Promise<FreshLinkedInExperience[]> {
+        console.log(`[LinkedInService] Fetching Experiences for URN: ${urn}`);
         try {
             const response = await axios.get(`${this.BASE_URL}/experience`, {
                 headers: this.getHeaders(),
                 params: { urn, page: '1' }
             });
-            return response.data?.data || [];
+            const data = response.data?.data || [];
+            console.log(`[LinkedInService] Experiences fetched successfully. Count: ${data.length}`);
+            return data;
         } catch (error: any) {
-            console.error('LinkedIn API Error (Experiences):', error?.response?.data || error.message);
-            throw new BadRequestError('Failed to fetch Experiences from LinkedIn Scraper.');
+            const errorData = error?.response?.data || error.message;
+            console.error('[LinkedInService] API Error (Experiences):', errorData);
+            throw new BadRequestError(`Failed to fetch Experiences: ${JSON.stringify(errorData)}`);
         }
     }
 
     async fetchEducations(urn: string): Promise<FreshLinkedInEducation[]> {
+        console.log(`[LinkedInService] Fetching Educations for URN: ${urn}`);
         try {
             const response = await axios.get(`${this.BASE_URL}/educations`, {
                 headers: this.getHeaders(),
                 params: { urn, page: '1' }
             });
-            return response.data?.data || [];
+            const data = response.data?.data || [];
+            console.log(`[LinkedInService] Educations fetched successfully. Count: ${data.length}`);
+            return data;
         } catch (error: any) {
-            console.error('LinkedIn API Error (Educations):', error?.response?.data || error.message);
-            // Si el perfil no tiene educacion, algunos APIs devuelven 404, tratamos de devolver vacio
+            const errorData = error?.response?.data || error.message;
+            console.error('[LinkedInService] API Error (Educations):', errorData);
+            // Some profiles might return 404/error if no education, we return empty but log it.
             return [];
         }
     }
 
     async fetchCertificates(urn: string): Promise<FreshLinkedInCertificate[]> {
+        console.log(`[LinkedInService] Fetching Certificates for URN: ${urn}`);
         try {
             const response = await axios.get(`${this.BASE_URL}/certifications`, {
                 headers: this.getHeaders(),
                 params: { urn, page: '1' }
             });
-            return response.data?.data || [];
+            const data = response.data?.data || [];
+            console.log(`[LinkedInService] Certificates fetched successfully. Count: ${data.length}`);
+            return data;
         } catch (error: any) {
-            console.error('LinkedIn API Error (Certificates):', error?.response?.data || error.message);
+            const errorData = error?.response?.data || error.message;
+            console.error('[LinkedInService] API Error (Certificates):', errorData);
             return [];
         }
     }
