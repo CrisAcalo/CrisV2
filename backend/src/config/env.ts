@@ -10,6 +10,9 @@ export const envSchema = z.object({
     JWT_SECRET: z.string().min(10),
     JWT_EXPIRES_IN: z.string().default('1d'),
     LINKEDIN_API_TOKEN: z.string().optional(),
+    MAIL_USER: z.string().email().optional(),
+    MAIL_PASS: z.string().optional(),
+    MAIL_TO: z.string().email().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
