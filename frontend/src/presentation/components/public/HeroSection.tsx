@@ -108,6 +108,7 @@ export const HeroSection = () => {
             <Link href="#proyectos" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold flex items-center justify-center gap-2 transition-all glow-accent">
               Ver Proyectos <ArrowRight size={18} />
             </Link>
+            
             <Link href="#contacto" className="w-full sm:w-auto px-8 py-4 rounded-xl glass font-semibold flex items-center justify-center gap-2 hover:bg-white/10 transition-all text-[var(--text-primary)]">
               Contactar <Mail size={18} />
             </Link>

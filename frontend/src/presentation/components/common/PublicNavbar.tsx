@@ -35,13 +35,13 @@ export const PublicNavbar = () => {
           <div className="flex items-center gap-4">
             <ThemeToggle />
 
-            <a href="/cv.pdf" download className="hidden min-[900px]:flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full glass hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-primary)' }}>
+            <a href="/cv-cristian-acalo.pdf" download="CV_Cristian_Acalo.pdf" className="hidden min-[900px]:flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full glass hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-primary)' }}>
               <Download size={14} /> CV
             </a>
 
-            <Link href="/login" className="text-xs font-semibold px-4 py-2 rounded-full hidden min-[900px]:block glass hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-primary)' }}>
+            {/* <Link href="/login" className="text-xs font-semibold px-4 py-2 rounded-full hidden min-[900px]:block glass hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-primary)' }}>
               Área Privada
-            </Link>
+            </Link> */}
 
             {/* Mobile Menu Toggle */}
             <button
@@ -82,13 +82,13 @@ export const PublicNavbar = () => {
 
                 <div className="w-full h-px bg-[var(--surface-border)] my-2" />
 
-                <a href="/cv.pdf" download className="flex items-center justify-center gap-2 w-full text-center py-3 rounded-xl glass text-sm hover:bg-[var(--surface-raised)] transition-colors" onClick={closeMenu}>
+                <a href="/cv-cristian-acalo.pdf" download="CV_Cristian_Acalo.pdf" className="flex items-center justify-center gap-2 w-full text-center py-3 rounded-xl glass text-sm hover:bg-[var(--surface-raised)] transition-colors" onClick={closeMenu}>
                   <Download size={16} /> Descargar CV
                 </a>
 
-                <Link href="/login" className="w-full text-center py-3 rounded-xl glass text-sm hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-secondary)' }} onClick={closeMenu}>
+                {/* <Link href="/login" className="w-full text-center py-3 rounded-xl glass text-sm hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-secondary)' }} onClick={closeMenu}>
                   Área Privada
-                </Link>
+                </Link> */}
               </nav>
             </motion.div>
           </div>
