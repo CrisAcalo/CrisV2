@@ -1,11 +1,4 @@
-const dnsHostname = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
-
-export function parseProjectImageHosts(value: string | undefined) {
-  return [...new Set((value ?? '')
-    .split(',')
-    .map((host) => host.trim().toLowerCase())
-    .filter((host) => host.length <= 253 && dnsHostname.test(host)))];
-}
+import { parseProjectImageHosts } from './projectImageHosts.cjs';
 
 const allowedHosts = new Set(parseProjectImageHosts(process.env.NEXT_PUBLIC_PROJECT_IMAGE_HOSTS));
 

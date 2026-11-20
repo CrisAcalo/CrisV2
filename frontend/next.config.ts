@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { parseProjectImageHosts } from "./src/presentation/utils/projectImageOptimization";
+import { parseProjectImageHosts } from "./src/presentation/utils/projectImageHosts.cjs";
 
 const nextConfig: NextConfig = {
   async headers() {
