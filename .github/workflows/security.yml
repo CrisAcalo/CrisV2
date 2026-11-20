@@ -1,0 +1,87 @@
+name: Security and integration checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: 'postgresql://portfolio_ci:ci-only-password@127.0.0.1:5432/portfolio_ci_test?schema=public'
+      NEXT_PUBLIC_API_URL: 'http://127.0.0.1:4000/api'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: portfolio_ci
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: portfolio_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U portfolio_ci -d portfolio_ci_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Install and audit backend
+        working-directory: backend
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npx prisma generate
+          npx prisma migrate deploy
+      - name: Backend integration tests
+        working-directory: backend
+        env:
+          CONFIRM_LOCAL_DB_TESTS: 'yes'
+        run: npm run test:integration
+      - name: Backend API security tests
+        working-directory: backend
+        env:
+          SECURITY_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: node --test tests/security.api.cjs
+      - name: Install and audit frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          npx tsc --noEmit
+      - name: Build and verify the frontend gateway against the isolated API
+        env:
+          ADMIN_SITE_ORIGIN: 'http://127.0.0.1:3000'
+          CONFIRM_LOCAL_DB_TESTS: 'yes'
+          GATEWAY_TEST_ORIGIN: 'http://127.0.0.1:3000'
+          GATEWAY_TEST_EMAIL: 'gateway-ci@example.test'
+          GATEWAY_TEST_PASSWORD: 'ci-fixture-password-only'
+        run: |
+          (cd backend && node -e 'const { PrismaClient } = require("@prisma/client"); const { hash } = require("bcrypt"); const p = new PrismaClient(); (async () => { try { await p.user.create({ data: { email: process.env.GATEWAY_TEST_EMAIL, passwordHash: await hash(process.env.GATEWAY_TEST_PASSWORD, 12), role: "ADMIN" } }); } finally { await p.$disconnect(); } })().catch(() => { process.exitCode = 1; });')
+          node backend/dist/index.js &
+          api_pid=$!
+          trap 'if [ -n "${web_pid:-}" ]; then kill "$web_pid" 2>/dev/null || true; fi; kill "$api_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4000/api/health >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4000/api/health >/dev/null
+          npm run build --prefix frontend
+          node frontend/node_modules/next/dist/bin/next start frontend --hostname 127.0.0.1 --port 3000 &
+          web_pid=$!
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/login >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:3000/login >/dev/null
+          node --test frontend/tests/security-gateway.cjs

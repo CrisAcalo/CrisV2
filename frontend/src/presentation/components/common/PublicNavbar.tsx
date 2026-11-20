@@ -1,61 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, Download } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ThemeToggle } from './ThemeToggle';
 import { CaLogo } from './CaLogo';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSectionsStore } from '../../../application/stores/useSectionsStore';
 
-export const PublicNavbar = () => {
+export const PublicNavbar = ({ sections, homeLinks = false }: {
+  sections: { id: string; label: string }[];
+  homeLinks?: boolean;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const hasProjects = useSectionsStore(s => s.hasProjects);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const lastActive = useRef<string | null>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const mobileNav = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
 
-  const toggleMenu = () => setIsOpen(!isOpen);
+  useEffect(() => {
+    if (homeLinks || !sections.length) return;
+
+    const targets = sections.flatMap(({ id }) => {
+      const target = document.getElementById(id);
+      return target ? [target] : [];
+    });
+    const main = document.getElementById('portfolio-content');
+    let frame = 0;
+
+    function update() {
+      frame = 0;
+      const readingLine = Math.max(112, window.innerHeight * .36);
+      let current: string | null = null;
+      for (const target of targets) {
+        if (target.getBoundingClientRect().top > readingLine) break;
+        current = target.id;
+      }
+      const scrollHeight = document.scrollingElement?.scrollHeight ?? 0;
+      if (scrollHeight > window.innerHeight && window.scrollY + window.innerHeight >= scrollHeight - 2) {
+        current = targets.at(-1)?.id ?? current;
+      }
+      if (current === lastActive.current) return;
+      lastActive.current = current;
+      setActiveSection(current);
+    }
+
+    function schedule() {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    }
+
+    const resize = new ResizeObserver(schedule);
+    if (main) resize.observe(main);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    window.addEventListener('hashchange', schedule);
+    schedule();
+
+    return () => {
+      resize.disconnect();
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('hashchange', schedule);
+    };
+  }, [homeLinks, sections]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    mobileNav.current?.querySelector('a')?.focus();
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      setIsOpen(false);
+      menuButton.current?.focus();
+    }
+
+    function handleFocus(event: FocusEvent) {
+      if (event.target instanceof Node && !mobileNav.current?.contains(event.target) && event.target !== menuButton.current) {
+        setIsOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape);
+    window.addEventListener('focusin', handleFocus);
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('focusin', handleFocus);
+    };
+  }, [isOpen]);
+
   const closeMenu = () => setIsOpen(false);
+  const sectionHref = (id: string) => (homeLinks ? '/#' : '#') + id;
+  const currentLocation = (id: string) => !homeLinks && activeSection === id ? 'location' : undefined;
 
   return (
     <>
       <header className="fixed top-0 w-full z-50 glass border-b border-[var(--surface-border)] rounded-none">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" onClick={closeMenu} aria-label="Inicio" className="hover:opacity-80 transition-opacity duration-200">
-            <CaLogo size={44} />
+        <div className="portfolio-shell portfolio-nav">
+          <Link href="/" onClick={closeMenu} aria-label="Inicio" className="inline-flex items-center min-h-11">
+            <CaLogo size={40} />
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden min-[900px]:flex items-center gap-8 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-            <Link href="#experiencia" className="hover:text-[var(--accent)] transition-colors">Experiencia</Link>
-            {hasProjects && <Link href="#proyectos" className="hover:text-[var(--accent)] transition-colors">Proyectos</Link>}
-            <Link href="#skills" className="hover:text-[var(--accent)] transition-colors">Skills</Link>
-            <Link href="#certificados" className="hover:text-[var(--accent)] transition-colors">Certificados</Link>
-            <Link href="#contacto" className="hover:text-[var(--accent)] transition-colors">Contacto</Link>
+          <nav className="portfolio-desktop-nav" aria-label="Secciones del portafolio">
+            {sections.map(({ id, label }) => <a key={id} href={sectionHref(id)} aria-current={currentLocation(id)}>{label}</a>)}
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
-
-            <a href="/cv-cristian-acalo.pdf" download="CV_Cristian_Acalo.pdf" className="hidden min-[900px]:flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full glass hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-primary)' }}>
-              <Download size={14} /> CV
+            <a href="/cv-cristian-acalo.pdf" download="CV_Cristian_Acalo.pdf" className="portfolio-link portfolio-desktop-cv" aria-label="Descargar CV">
+              <Download size={16} aria-hidden="true" /> CV
             </a>
-
-            {/* <Link href="/login" className="text-xs font-semibold px-4 py-2 rounded-full hidden min-[900px]:block glass hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-primary)' }}>
-              Área Privada
-            </Link> */}
-
-            {/* Mobile Menu Toggle */}
             <button
-              className="min-[900px]:hidden p-2 -mr-2 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors z-50"
-              onClick={toggleMenu}
-              aria-label="Toggle menu"
+              type="button"
+              ref={menuButton}
+              className="portfolio-menu-button"
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={isOpen}
+              aria-controls={isOpen ? 'mobile-navigation' : undefined}
             >
-              {isOpen ? <X size={20} /> : <Menu size={20} />}
+              {isOpen ? <X size={21} aria-hidden="true" /> : <Menu size={21} aria-hidden="true" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-40 flex justify-end min-[900px]:hidden">
@@ -63,34 +133,28 @@ export const PublicNavbar = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={reduceMotion ? { duration: 0 } : undefined}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={closeMenu}
+              onClick={() => {
+                closeMenu();
+                menuButton.current?.focus();
+              }}
             />
-            <motion.div
+            <motion.nav
+              ref={mobileNav}
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-64 h-[calc(100vh-5rem)] top-20 glass backdrop-blur-lg border-l border-[var(--surface-border)] shadow-2xl flex flex-col justify-center items-center gap-8 px-6"
+              transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
+              id="mobile-navigation"
+              aria-label="Secciones del portafolio"
+              className="portfolio-mobile-nav glass"
             >
-              <nav className="flex flex-col items-center gap-6 text-lg font-medium w-full" style={{ color: 'var(--text-primary)' }}>
-                <Link href="#experiencia" className="hover:text-[var(--accent)] transition-colors" onClick={closeMenu}>Experiencia</Link>
-                {hasProjects && <Link href="#proyectos" className="hover:text-[var(--accent)] transition-colors" onClick={closeMenu}>Proyectos</Link>}
-                <Link href="#skills" className="hover:text-[var(--accent)] transition-colors" onClick={closeMenu}>Skills</Link>
-                <Link href="#certificados" className="hover:text-[var(--accent)] transition-colors" onClick={closeMenu}>Certificados</Link>
-                <Link href="#contacto" className="hover:text-[var(--accent)] transition-colors" onClick={closeMenu}>Contacto</Link>
-
-                <div className="w-full h-px bg-[var(--surface-border)] my-2" />
-
-                <a href="/cv-cristian-acalo.pdf" download="CV_Cristian_Acalo.pdf" className="flex items-center justify-center gap-2 w-full text-center py-3 rounded-xl glass text-sm hover:bg-[var(--surface-raised)] transition-colors" onClick={closeMenu}>
-                  <Download size={16} /> Descargar CV
-                </a>
-
-                {/* <Link href="/login" className="w-full text-center py-3 rounded-xl glass text-sm hover:bg-[var(--surface-raised)] transition-colors" style={{ color: 'var(--text-secondary)' }} onClick={closeMenu}>
-                  Área Privada
-                </Link> */}
-              </nav>
-            </motion.div>
+              {sections.map(({ id, label }) => <a key={id} href={sectionHref(id)} aria-current={currentLocation(id)} onClick={closeMenu}>{label}</a>)}
+              <a href="/cv-cristian-acalo.pdf" download="CV_Cristian_Acalo.pdf" onClick={closeMenu}>
+                <Download size={18} aria-hidden="true" /> Descargar CV
+              </a>
+            </motion.nav>
           </div>
         )}
       </AnimatePresence>

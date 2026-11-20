@@ -1,0 +1,77 @@
+.assembly {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: .65rem clamp(1rem, 4vw, 3rem);
+  padding-block: clamp(.95rem, 2vw, 1.45rem);
+  border-top: 1px solid var(--portfolio-line);
+}
+
+.assembly::before {
+  content: '';
+  position: absolute;
+  inset: -1px 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--portfolio-action), var(--portfolio-aurora-blue) 34%, transparent 76%);
+  opacity: .65;
+  pointer-events: none;
+}
+
+@media (min-width: 900px) {
+  .assembly {
+    grid-template-columns: minmax(0, 11.5rem) minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .assembly {
+    --reveal-delay: calc(var(--group-delay, 0ms) + var(--mobile-delay, 0ms));
+  }
+
+  .assembly:nth-child(n + 2) {
+    --group-delay: 55ms;
+  }
+
+  .assembly:nth-child(n + 3) {
+    --group-delay: 110ms;
+  }
+
+  .assembly[data-entered] > * {
+    animation: groupArrival 440ms cubic-bezier(.25, .55, .32, 1) var(--reveal-delay) backwards;
+  }
+
+  .assembly[data-entered]::before {
+    transform-origin: left center;
+    animation: lineArrival 480ms cubic-bezier(.25, .55, .32, 1) var(--reveal-delay) backwards;
+  }
+
+  @media (width < 900px) {
+    .assembly {
+      --mobile-delay: 100ms;
+    }
+  }
+}
+
+@keyframes groupArrival {
+  from {
+    opacity: .78;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lineArrival {
+  from {
+    opacity: .35;
+    transform: scaleX(.22);
+  }
+
+  to {
+    opacity: .65;
+    transform: none;
+  }
+}

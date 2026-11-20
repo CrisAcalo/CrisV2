@@ -10,6 +10,16 @@ import { seedMessages } from './seeds/message.seed';
 const prisma = new PrismaClient();
 
 async function main() {
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('The destructive demo seed cannot run in production');
+    }
+    const databaseHost = new URL(process.env.DATABASE_URL ?? '').hostname;
+    if (!['localhost', '127.0.0.1', '[::1]'].includes(databaseHost)) {
+        throw new Error('The destructive demo seed is restricted to a local database');
+    }
+    if (process.env.CONFIRM_DESTRUCTIVE_SEED !== 'yes') {
+        throw new Error('Set CONFIRM_DESTRUCTIVE_SEED=yes to reset the local database');
+    }
     console.log('🧹 Limpiando base de datos (excepto SystemConfiguration)...');
 
     // Delete in dependency-safe order (children first)

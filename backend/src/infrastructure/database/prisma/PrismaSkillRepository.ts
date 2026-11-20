@@ -10,17 +10,17 @@ const SKILL_QUERY = {
         createdAt: true, updatedAt: true, deletedAt: true,
         experiences: {
             select: {
-                experience: { select: { id: true, role: true, company: true } }
+                experience: { select: { id: true, role: true, company: true, deletedAt: true } }
             }
         },
         educations: {
             select: {
-                education: { select: { id: true, institution: true, degree: true } }
+                education: { select: { id: true, institution: true, degree: true, deletedAt: true } }
             }
         },
         projects: {
             select: {
-                project: { select: { id: true, title: true } }
+                project: { select: { id: true, title: true, isPublished: true, deletedAt: true } }
             }
         },
     }

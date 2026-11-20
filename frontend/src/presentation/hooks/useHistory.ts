@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ExperienceUseCase, EducationUseCase } from '../../application/use-cases/HistoryUseCase';
+import { Experience, Education } from '../../domain/entities';
 
 // ─── EXPERIENCE ──────────────────────────────────────────────────────────────
 
@@ -21,7 +22,7 @@ export const useCreateExperience = () => {
 export const useUpdateExperience = () => {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: any }) => ExperienceUseCase.updateExperience(id, data),
+        mutationFn: ({ id, data }: { id: string; data: Partial<Omit<Experience, 'id'>> }) => ExperienceUseCase.updateExperience(id, data),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['experiences'] }),
     });
 };
@@ -70,7 +71,7 @@ export const useCreateEducation = () => {
 export const useUpdateEducation = () => {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: any }) => EducationUseCase.updateEducation(id, data),
+        mutationFn: ({ id, data }: { id: string; data: Partial<Omit<Education, 'id'>> }) => EducationUseCase.updateEducation(id, data),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['educations'] }),
     });
 };

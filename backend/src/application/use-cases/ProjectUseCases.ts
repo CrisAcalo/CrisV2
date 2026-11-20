@@ -1,8 +1,8 @@
-import { IProjectRepository } from '../../domain/repositories/IProjectRepository';
+import { IProjectRepository, ProjectWrite } from '../../domain/repositories/IProjectRepository';
 import { NotFoundError } from '../../domain/errors/AppError';
 import { Project } from '../../domain/entities';
 
-export type CreateProjectDTO = Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
+export type CreateProjectDTO = ProjectWrite;
 export type UpdateProjectDTO = Partial<CreateProjectDTO>;
 
 export class ProjectUseCases {

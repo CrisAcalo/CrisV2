@@ -1,53 +1,101 @@
-'use client';
+import { ArrowUpRight, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import type { Project, Skill } from '../../../domain/entities';
+import { projectPath } from '../../utils/projectPath';
+import { resolveTechnologyCategory, technologyCategories, TechnologyIcon, type TechnologyCategoryId } from './TechnologyIcon';
+import { SkillsAssembly } from './SkillsAssembly';
+import styles from './SkillsSection.module.css';
 
-import { motion } from 'framer-motion';
-import { SectionHeading, GlassCard } from '../common';
-import { Skill } from '../../../domain/entities';
+type ProjectLink = Pick<Project, 'id' | 'title'>;
 
-export interface SkillsSectionProps {
-  skills: Skill[];
+const skillNames = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
+
+function SkillItem({ skill, links }: { skill: Skill; links?: ProjectLink[] }) {
+  const label = (
+    <>
+      <span className={styles.iconFrame}>
+        <TechnologyIcon name={skill.name} size={23} />
+      </span>
+      <span className={styles.itemText}>
+        <span className={styles.name}>{skill.name}</span>
+        {!!links?.length && (
+          <span className={styles.projectCount}>
+            {links.length} {links.length === 1 ? 'proyecto' : 'proyectos'}
+          </span>
+        )}
+      </span>
+    </>
+  );
+
+  return (
+    <li className={styles.item}>
+      {links?.length ? (
+        <details className={styles.details}>
+          <summary className={styles.itemRow}>
+            {label}
+            <ChevronDown size={16} className={styles.chevron} aria-hidden="true" />
+          </summary>
+          <ul className={styles.projectList} role="list">
+            {links.map(({ id, title }) => (
+              <li key={id}>
+                <Link href={projectPath(id)} prefetch={false} className={`portfolio-link ${styles.projectLink}`}>
+                  {title} <ArrowUpRight size={14} aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : <div className={styles.itemRow}>{label}</div>}
+    </li>
+  );
 }
 
-export const SkillsSection = ({ skills }: SkillsSectionProps) => {
-  const publicSkills = skills.filter(skill => skill.isPublic);
-  return (
-    <section id="skills" className="relative py-24 overflow-hidden">
+export function SkillsSection({ skills, projects }: { skills: Skill[]; projects?: Project[] }) {
+  const groups = new Map<TechnologyCategoryId, Skill[]>();
+  for (const skill of skills) {
+    if (!skill.isPublic || skill.deletedAt) continue;
+    const category = resolveTechnologyCategory(skill.name);
+    const group = groups.get(category) ?? [];
+    group.push(skill);
+    groups.set(category, group);
+  }
 
-      {/* Background Glow */}
+  if (!groups.size) return null;
+
+  const linksBySkill = new Map<string, ProjectLink[]>();
+  for (const project of projects ?? []) {
+    if (!project.isPublished || project.deletedAt) continue;
+    for (const skill of project.skills ?? []) {
+      const links = linksBySkill.get(skill.id) ?? [];
+      links.push({ id: project.id, title: project.title });
+      linksBySkill.set(skill.id, links);
+    }
+  }
+
+  return (
+    <section id="skills" className="portfolio-section" aria-labelledby="skills-title" tabIndex={-1}>
       <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[var(--accent)] opacity-[0.03] blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-6 relative z-10">
-        <SectionHeading
-          title="Habilidades Técnicas"
-          subtitle="Herramientas y tecnologías con las que trabajo para construir soluciones de software de alto nivel."
-        />
+      <div className="portfolio-shell portfolio-section-inner">
+        <h2 id="skills-title" className="portfolio-heading">Tecnologías</h2>
+        <div className={styles.catalogue}>
+          {technologyCategories.map(({ id, label }) => {
+            const group = groups.get(id);
+            if (!group) return null;
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.5 }}
-          className="mt-16"
-        >
-          <GlassCard className="flex flex-wrap justify-center gap-3 md:gap-4 p-8 md:p-12 hover:border-[var(--accent)] transition-all duration-500">
-            {publicSkills.map((skill, index) => (
-              <motion.div
-                key={skill.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                className="px-4 py-2 md:px-6 md:py-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--surface-border)] hover:border-[var(--accent)] text-[var(--text-primary)] font-semibold shadow-sm hover:shadow-[var(--neon-glow)] transition-all cursor-default flex items-center gap-2"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" title="Validado en LinkedIn" />
-                {skill.name}
-              </motion.div>
-            ))}
-          </GlassCard>
-        </motion.div>
-
+            return (
+              <SkillsAssembly key={id}>
+                <h3 className={styles.groupTitle}>{label}</h3>
+                <ul className={styles.list} role="list">
+                  {group.sort((first, second) => skillNames.compare(first.name, second.name)).map((skill) => (
+                    <SkillItem key={skill.id} skill={skill} links={projects ? linksBySkill.get(skill.id) : skill.projects} />
+                  ))}
+                </ul>
+              </SkillsAssembly>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
-};
+}

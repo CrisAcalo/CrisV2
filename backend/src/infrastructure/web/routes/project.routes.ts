@@ -4,7 +4,7 @@ import { ProjectUseCases } from '../../../application/use-cases/ProjectUseCases'
 import { PrismaProjectRepository } from '../../database/prisma/PrismaProjectRepository';
 import { validateRequest } from '../middlewares/validateRequest';
 import { createProjectSchema, updateProjectSchema, getProjectByIdSchema, deleteProjectSchema } from '../middlewares/validators/project.validator';
-import { authGuard, requireRole } from '../middlewares/authGuard';
+import { authGuard, optionalAuth, requireAdminForDeleted, requireRole } from '../middlewares/authGuard';
 
 const router = Router();
 
@@ -16,6 +16,50 @@ const projectController = new ProjectController(projectUseCases);
  * @swagger
  * components:
  *   schemas:
+ *     ProjectCaseStudy:
+ *       type: object
+ *       nullable: true
+ *       properties:
+ *         problem:
+ *           type: string
+ *           maxLength: 900
+ *         contribution:
+ *           type: string
+ *           maxLength: 900
+ *         decision:
+ *           type: string
+ *           maxLength: 900
+ *         outcome:
+ *           type: string
+ *           maxLength: 900
+ *     ProjectWrite:
+ *       type: object
+ *       properties:
+ *         title:
+ *           type: string
+ *         description:
+ *           type: string
+ *         imageUrl:
+ *           type: string
+ *           nullable: true
+ *         repoUrl:
+ *           type: string
+ *           nullable: true
+ *         liveUrl:
+ *           type: string
+ *           nullable: true
+ *         skillIds:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: uuid
+ *         isPublished:
+ *           type: boolean
+ *         isFeatured:
+ *           type: boolean
+ *           description: Setting this on a published project replaces any existing featured project.
+ *         caseStudy:
+ *           $ref: '#/components/schemas/ProjectCaseStudy'
  *     Project:
  *       type: object
  *       properties:
@@ -29,10 +73,16 @@ const projectController = new ProjectController(projectUseCases);
  *         imageUrl:
  *           type: string
  *           nullable: true
- *         techStack:
+ *         skills:
  *           type: array
  *           items:
- *             type: string
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 format: uuid
+ *               name:
+ *                 type: string
  *         repoUrl:
  *           type: string
  *           nullable: true
@@ -41,6 +91,13 @@ const projectController = new ProjectController(projectUseCases);
  *           nullable: true
  *         isPublished:
  *           type: boolean
+ *         isFeatured:
+ *           type: boolean
+ *         caseStudy:
+ *           $ref: '#/components/schemas/ProjectCaseStudy'
+ *         hasCaseStudy:
+ *           type: boolean
+ *           description: Included in the public list. The full case study is in the project detail.
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -53,7 +110,7 @@ const projectController = new ProjectController(projectUseCases);
  * @swagger
  * /api/projects:
  *   get:
- *     summary: Retrieve all projects
+ *     summary: Retrieve projects, with the featured project first
  *     tags: [Projects]
  *     responses:
  *       200:
@@ -61,11 +118,16 @@ const projectController = new ProjectController(projectUseCases);
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Project'
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Project'
  */
-router.get('/', projectController.getAllProjects);
+router.get('/', optionalAuth, requireAdminForDeleted, projectController.getAllProjects);
 
 /**
  * @swagger
@@ -85,11 +147,16 @@ router.get('/', projectController.getAllProjects);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Project'
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Project'
  *       404:
  *         description: Project not found
  */
-router.get('/:id', validateRequest(getProjectByIdSchema), projectController.getProjectById);
+router.get('/:id', optionalAuth, validateRequest(getProjectByIdSchema), projectController.getProjectById);
 
 // Protected Routes (Admin Only)
 const requireAdmin = requireRole('ADMIN');
@@ -107,32 +174,15 @@ const requireAdmin = requireRole('ADMIN');
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - title
- *               - description
- *               - techStack
- *               - isPublished
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               techStack:
- *                 type: array
- *                 items:
- *                   type: string
- *               imageUrl:
- *                 type: string
- *               repoUrl:
- *                 type: string
- *               liveUrl:
- *                 type: string
- *               isPublished:
- *                 type: boolean
+ *             allOf:
+ *               - $ref: '#/components/schemas/ProjectWrite'
+ *               - type: object
+ *                 required: [title]
  *     responses:
  *       201:
  *         description: Created successfully
+ *       400:
+ *         description: Invalid fields or attempt to feature a draft
  *       401:
  *         description: Unauthorized
  *       403:
@@ -159,21 +209,12 @@ router.post('/', authGuard, requireAdmin, validateRequest(createProjectSchema), 
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               techStack:
- *                 type: array
- *                 items:
- *                   type: string
- *               isPublished:
- *                 type: boolean
+ *             $ref: '#/components/schemas/ProjectWrite'
  *     responses:
  *       200:
  *         description: Updated successfully
+ *       400:
+ *         description: Invalid fields or attempt to feature a draft
  *       404:
  *         description: Project not found
  */

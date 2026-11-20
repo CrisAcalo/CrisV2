@@ -21,7 +21,7 @@ const options = {
                 bearerAuth: {
                     type: 'http',
                     scheme: 'bearer',
-                    bearerFormat: 'JWT',
+                    bearerFormat: 'opaque',
                 }
             }
         }

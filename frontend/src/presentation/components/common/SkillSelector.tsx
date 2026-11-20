@@ -1,144 +1,111 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { SkillRef } from '../../../domain/entities';
+import { useId, useState } from 'react';
+import { Check, Plus } from 'lucide-react';
+import type { SkillRef } from '../../../domain/entities';
 import { useCreateSkill } from '../../hooks/useSkills';
-import { toast } from 'sonner';
-import { Plus, Search, X } from 'lucide-react';
+import { getApiErrorMessage, getApiStatus } from '../../utils/apiErrors';
+import { AdminInput } from '../admin/AdminFormFields';
+import styles from '../admin/AdminDialog.module.css';
 
 interface SkillSelectorProps {
-    skills: SkillRef[];          // All available skills
-    selectedIds: string[];       // Currently selected skill IDs
-    onChange: (ids: string[]) => void;
-    disabled?: boolean;
-    onSkillCreated?: (skill: SkillRef) => void; // Callback when a new skill is created inline
+  skills: SkillRef[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+  disabled?: boolean;
+  error?: string;
+  loading?: boolean;
+  loadError?: boolean;
+  onRetry?: () => void;
+  onCreatingChange?: (creating: boolean) => void;
 }
 
-export const SkillSelector: React.FC<SkillSelectorProps> = ({
-    skills,
-    selectedIds,
-    onChange,
-    disabled = false,
-    onSkillCreated,
-}) => {
-    const [search, setSearch] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
-    const createSkillMutation = useCreateSkill();
+export function SkillSelector({
+  skills, selectedIds, onChange, disabled = false, error, loading, loadError, onRetry, onCreatingChange,
+}: SkillSelectorProps) {
+  const [search, setSearch] = useState('');
+  const [created, setCreated] = useState<SkillRef[]>([]);
+  const [createError, setCreateError] = useState('');
+  const create = useCreateSkill();
+  const id = useId();
+  const name = search.trim();
+  const query = name.toLocaleLowerCase('es');
+  const available = [...skills, ...created.filter((entry) => !skills.some((skill) => entry.id === skill.id))];
+  const filtered = available.filter((skill) => skill.name.toLocaleLowerCase('es').includes(query));
+  const canCreate = name && !available.some((skill) => skill.name.toLocaleLowerCase('es') === query);
+  const locked = disabled || create.isPending;
 
-    const filtered = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        return q ? skills.filter(s => s.name.toLowerCase().includes(q)) : skills;
-    }, [skills, search]);
+  async function createInline() {
+    if (locked || !canCreate) return;
+    setCreateError('');
+    onCreatingChange?.(true);
+    try {
+      const { data: skill } = await create.mutateAsync({ name, isPublic: true });
+      setCreated((previous) => [...previous, skill]);
+      onChange([...new Set([...selectedIds, skill.id])]);
+      setSearch('');
+    } catch (err) {
+      setCreateError(getApiStatus(err) === 409
+        ? 'Ya existe una tecnología con ese nombre.'
+        : getApiErrorMessage(err, 'No se pudo crear la tecnología.'));
+    } finally {
+      onCreatingChange?.(false);
+    }
+  }
 
-    const exactMatch = skills.some(
-        s => s.name.toLowerCase() === search.trim().toLowerCase()
-    );
-
-    const toggle = (id: string) => {
-        if (disabled) return;
-        if (selectedIds.includes(id)) {
-            onChange(selectedIds.filter(s => s !== id));
-        } else {
-            onChange([...selectedIds, id]);
-        }
-    };
-
-    const handleCreateInline = async () => {
-        const name = search.trim();
-        if (!name) return;
-        setIsCreating(true);
-        try {
-            const res = await createSkillMutation.mutateAsync({ name, isPublic: true });
-            const newSkill: SkillRef = { id: res.data.id, name: res.data.name };
-            onChange([...selectedIds, newSkill.id]);
-            onSkillCreated?.(newSkill);
-            setSearch('');
-            toast.success(`Skill "${name}" creada y añadida`);
-        } catch (err: any) {
-            const status = err?.response?.status;
-            if (status === 409) {
-                toast.error('Ya existe una skill con ese nombre');
-            } else {
-                toast.error('Error al crear la skill');
-            }
-        } finally {
-            setIsCreating(false);
-        }
-    };
-
-    return (
-        <div className="flex flex-col gap-2">
-            {/* Search input */}
-            <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" style={{ color: 'var(--text-primary)' }} />
-                <input
-                    type="text"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Buscar skill..."
-                    disabled={disabled}
-                    className="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg border focus:outline-none focus:ring-1"
-                    style={{
-                        background: 'var(--surface)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text-primary)',
-                    }}
-                />
-                {search && (
-                    <button
-                        type="button"
-                        onClick={() => setSearch('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-80"
-                    >
-                        <X size={12} />
-                    </button>
-                )}
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
-                {filtered.length === 0 && !search && (
-                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
-                        No hay skills. Crea una usando el buscador.
-                    </p>
-                )}
-                {filtered.map(skill => {
-                    const selected = selectedIds.includes(skill.id);
-                    return (
-                        <button
-                            key={skill.id}
-                            type="button"
-                            disabled={disabled}
-                            onClick={() => toggle(skill.id)}
-                            className={`
-                                px-3 py-1 rounded-full text-xs font-medium transition-all duration-150 border
-                                ${selected
-                                    ? 'border-[var(--primary)] bg-[var(--primary)] text-white shadow-sm'
-                                    : 'hover:border-[var(--primary)] hover:text-[var(--primary)]'
-                                }
-                                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                            `}
-                            style={selected ? {} : { borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--surface-raised)' }}
-                        >
-                            {skill.name}
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* Create inline — shown only when there's a search with no exact match */}
-            {search.trim() && !exactMatch && (
-                <button
-                    type="button"
-                    disabled={disabled || isCreating}
-                    onClick={handleCreateInline}
-                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-dashed transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                >
-                    <Plus size={12} />
-                    {isCreating ? 'Creando...' : `Crear "${search.trim()}"`}
-                </button>
-            )}
+  return (
+    <div className={styles.selector} role="group" aria-labelledby={id}>
+      <p id={id} className={styles.selectorLabel}>Tecnologías asociadas</p>
+      <AdminInput
+        type="search"
+        label="Buscar tecnologías"
+        value={search}
+        onChange={(event) => {
+          setSearch(event.target.value);
+          setCreateError('');
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.preventDefault();
+        }}
+        disabled={locked || loading || loadError}
+        maxLength={100}
+        hint={selectedIds.length ? `${selectedIds.length} seleccionadas` : undefined}
+        error={createError || error}
+      />
+      {loading && <p className={styles.hint} role="status">Cargando tecnologías…</p>}
+      {loadError && (
+        <div className={styles.selector}>
+          <p className={styles.error} role="alert">No se pudieron cargar las tecnologías.</p>
+          <button className={`${styles.action} ${styles.secondary}`} type="button" onClick={onRetry}>Reintentar</button>
         </div>
-    );
-};
+      )}
+      {!loading && !loadError && (
+        <>
+          <div className={styles.selectorOptions}>
+            {filtered.length === 0 && <p className={styles.hint}>{name ? 'No hay coincidencias.' : 'Todavía no hay tecnologías.'}</p>}
+            {filtered.map((skill) => {
+              const selected = selectedIds.includes(skill.id);
+              return (
+                <button
+                  key={skill.id}
+                  type="button"
+                  disabled={locked}
+                  aria-pressed={selected}
+                  className={styles.choice}
+                  onClick={() => onChange(selected ? selectedIds.filter((id) => id !== skill.id) : [...selectedIds, skill.id])}
+                >
+                  {selected && <Check size={14} aria-hidden="true" />} {skill.name}
+                </button>
+              );
+            })}
+          </div>
+          {canCreate && (
+            <button type="button" disabled={locked} onClick={createInline} className={`${styles.action} ${styles.secondary} justify-self-start`}>
+              <Plus size={16} aria-hidden="true" /> {create.isPending ? 'Creando…' : `Crear «${name}»`}
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

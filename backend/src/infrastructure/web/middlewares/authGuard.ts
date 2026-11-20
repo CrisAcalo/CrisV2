@@ -1,44 +1,43 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, TokenPayload } from '../../../utils/jwt';
 import { UnauthorizedError, ForbiddenError } from '../../../domain/errors/AppError';
+import { resolveAuthSession } from '../../services/AuthSessionService';
 
-// Extender el Request de Express para incluir el usuario de forma tipada
 declare global {
     namespace Express {
         interface Request {
-            user?: TokenPayload;
+            user?: Awaited<ReturnType<typeof resolveAuthSession>>;
         }
     }
 }
 
-export const authGuard = (req: Request, res: Response, next: NextFunction): void => {
-    const authHeader = req.headers.authorization;
+function readToken(req: Request): string {
+    const token = /^Bearer ([A-Za-z0-9_-]{43})$/i.exec(req.headers.authorization ?? '')?.[1];
+    if (!token) throw new UnauthorizedError('Missing or invalid session');
+    return token;
+}
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw new UnauthorizedError('No token provided or invalid format');
+export const authGuard = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    req.user ??= await resolveAuthSession(readToken(req));
+    next();
+};
+
+// Public reads remain available, while an authenticated admin may see drafts.
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    if (!req.headers.authorization) return next();
+    await authGuard(req, res, next);
+};
+
+export const requireAdminForDeleted = (req: Request, _res: Response, next: NextFunction): void => {
+    if (req.query.deleted === 'true' && req.user?.role !== 'ADMIN') {
+        throw new ForbiddenError('Admin access required for deleted records');
     }
-
-    const token = authHeader.split(' ')[1];
-
-    try {
-        const payload = verifyToken(token);
-        req.user = payload;
-        next();
-    } catch (error) {
-        throw new UnauthorizedError('Invalid or expired token');
-    }
+    next();
 };
 
 export const requireRole = (role: 'ADMIN' | 'BASIC') => {
-    return (req: Request, res: Response, next: NextFunction): void => {
-        if (!req.user) {
-            throw new UnauthorizedError('Authentication required');
-        }
-
-        if (req.user.role !== role) {
-            throw new ForbiddenError(`Access denied. Requires ${role} role.`);
-        }
-
+    return (req: Request, _res: Response, next: NextFunction): void => {
+        if (!req.user) throw new UnauthorizedError('Authentication required');
+        if (req.user.role !== role) throw new ForbiddenError('Insufficient permissions');
         next();
     };
 };

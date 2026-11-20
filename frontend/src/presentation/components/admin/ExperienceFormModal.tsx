@@ -1,142 +1,108 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { isAxiosError } from 'axios';
-import { Modal, Input, Button, SkillSelector } from '../common';
-import { useCreateExperience, useUpdateExperience } from '../../hooks/useHistory';
+import { Modal } from '../common/Modal';
+import { SkillSelector } from '../common/SkillSelector';
 import { useSkills } from '../../hooks/useSkills';
-import { Experience } from '../../../domain/entities';
+import { useCreateExperience, useUpdateExperience } from '../../hooks/useHistory';
+import type { Experience } from '../../../domain/entities';
+import { AdminFormActions, AdminInput, AdminTextarea } from './AdminFormFields';
+import { dateField, dateInputValue, optionalDateField, showFormError, utcDate } from './adminFormValidation';
+import styles from './AdminDialog.module.css';
 
 const schema = z.object({
-    role:                   z.string().min(2, 'El cargo debe tener al menos 2 caracteres'),
-    company:                z.string().min(2, 'La empresa debe tener al menos 2 caracteres'),
-    startDate:              z.string().min(1, 'La fecha de inicio es requerida'),
-    endDate:                z.string().optional(),
-    description:            z.string().optional(),
-    isImportedFromLinkedIn: z.boolean(),
-    skillIds:               z.array(z.string()),
+  role: z.string().trim().min(1, 'Escribe el cargo'),
+  company: z.string().trim().min(1, 'Escribe la empresa'),
+  startDate: dateField,
+  endDate: optionalDateField,
+  description: z.string().trim(),
+  skillIds: z.array(z.string()),
+}).refine(({ startDate, endDate }) => !endDate || endDate >= startDate, {
+  message: 'La fecha de fin debe ser igual o posterior a la de inicio.',
+  path: ['endDate'],
 });
 
-type FormValues = z.infer<typeof schema>;
-
-interface Props {
-    isOpen: boolean;
-    onClose: () => void;
-    experienceToEdit?: Experience | null;
-}
-
-export const ExperienceFormModal: React.FC<Props> = ({ isOpen, onClose, experienceToEdit }) => {
-    const createMutation = useCreateExperience();
-    const updateMutation = useUpdateExperience();
-    const { data: skillsData } = useSkills(false);
-    const allSkills = skillsData?.data || [];
-    const isPending = createMutation.isPending || updateMutation.isPending;
-
-    const { register, handleSubmit, control, reset, setError, formState: { errors } } = useForm<FormValues>({
-        resolver: zodResolver(schema) as any,
-        defaultValues: {
-            role: '', company: '', startDate: '', endDate: '', description: '',
-            isImportedFromLinkedIn: false, skillIds: [],
-        },
-    });
-
-    useEffect(() => {
-        if (experienceToEdit) {
-            reset({
-                role:                   experienceToEdit.role,
-                company:                experienceToEdit.company,
-                startDate:              experienceToEdit.startDate ? experienceToEdit.startDate.toString().slice(0, 10) : '',
-                endDate:                experienceToEdit.endDate   ? experienceToEdit.endDate.toString().slice(0, 10) : '',
-                description:            experienceToEdit.description || '',
-                isImportedFromLinkedIn: experienceToEdit.isImportedFromLinkedIn,
-                skillIds:               experienceToEdit.skills?.map(s => s.id) ?? [],
-            });
-        } else {
-            reset({ role: '', company: '', startDate: '', endDate: '', description: '', isImportedFromLinkedIn: false, skillIds: [] });
-        }
-    }, [experienceToEdit, isOpen, reset]);
-
-    const onSubmit = async (values: FormValues) => {
-        const toISO = (d?: string) => d ? new Date(d + 'T00:00:00').toISOString() : null;
-        const payload = { ...values, startDate: toISO(values.startDate)!, endDate: toISO(values.endDate) };
-
-        try {
-            if (experienceToEdit) {
-                await updateMutation.mutateAsync({ id: experienceToEdit.id, data: payload });
-                toast.success('¡Experiencia actualizada correctamente!');
-            } else {
-                await createMutation.mutateAsync(payload as any);
-                toast.success('¡Experiencia creada correctamente!');
-            }
-            onClose();
-        } catch (err: any) {
-            if (isAxiosError(err) && err.response?.status === 400) {
-                const serverErrors = err.response.data?.errors;
-                if (Array.isArray(serverErrors) && serverErrors.length > 0) {
-                    let hasFieldError = false;
-                    serverErrors.forEach((e: { path: string; message: string }) => {
-                        const fieldName = e.path.replace(/^body\./, '') as keyof FormValues;
-                        if (fieldName in schema.shape) {
-                            setError(fieldName, { type: 'server', message: e.message });
-                            hasFieldError = true;
-                        }
-                    });
-                    if (!hasFieldError) toast.error(err.response.data?.message || 'Datos inválidos');
-                } else {
-                    toast.error(err.response?.data?.message || 'Datos inválidos');
-                }
-            } else {
-                toast.error('Error al guardar la experiencia');
-            }
-        }
-    };
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title={experienceToEdit ? 'Editar Experiencia' : 'Nueva Experiencia'}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <Input label="Cargo *" placeholder="Ej: Frontend Developer" error={errors.role?.message} {...register('role')} />
-                <Input label="Empresa *" placeholder="Ej: Google" error={errors.company?.message} {...register('company')} />
-
-                <div className="grid grid-cols-2 gap-4">
-                    <Input label="Fecha de inicio *" type="date" error={errors.startDate?.message} {...register('startDate')} />
-                    <Input label="Fecha de fin" type="date" hint="Vacío = trabajo actual" error={errors.endDate?.message} {...register('endDate')} />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Descripción</label>
-                    <textarea
-                        rows={3}
-                        placeholder="Describe tus responsabilidades..."
-                        className="w-full rounded-lg border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2"
-                        style={{ background: 'var(--surface)', borderColor: 'var(--surface-border)', color: 'var(--text-primary)' }}
-                        {...register('description')}
-                    />
-                    {errors.description && <span className="text-xs text-red-500">{errors.description.message}</span>}
-                </div>
-
-                <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Skills asociadas</label>
-                    <Controller
-                        name="skillIds"
-                        control={control}
-                        render={({ field }) => (
-                            <SkillSelector skills={allSkills} selectedIds={field.value} onChange={field.onChange} />
-                        )}
-                    />
-                </div>
-
-
-                <div className="flex justify-end gap-3 pt-2">
-                    <Button variant="secondary-light" type="button" onClick={onClose} disabled={isPending}>Cancelar</Button>
-                    <Button variant="primary" type="submit" disabled={isPending}>
-                        {isPending ? 'Guardando...' : experienceToEdit ? 'Guardar Cambios' : 'Crear Experiencia'}
-                    </Button>
-                </div>
-            </form>
-        </Modal>
-    );
+type Values = z.infer<typeof schema>;
+const defaults: Values = {
+  role: '', company: '', startDate: '', endDate: '', description: '', skillIds: [],
 };
+
+export function ExperienceFormModal({ isOpen, onClose, experienceToEdit }: {
+  isOpen: boolean;
+  onClose: () => void;
+  experienceToEdit?: Experience | null;
+}) {
+  const create = useCreateExperience();
+  const update = useUpdateExperience();
+  const skills = useSkills();
+  const [creatingSkill, setCreatingSkill] = useState(false);
+  const { register, handleSubmit, control, reset, setError, formState: { errors, isSubmitting } } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: defaults,
+  });
+  const busy = isSubmitting || creatingSkill;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    reset(experienceToEdit ? {
+      role: experienceToEdit.role,
+      company: experienceToEdit.company,
+      startDate: dateInputValue(experienceToEdit.startDate),
+      endDate: dateInputValue(experienceToEdit.endDate),
+      description: experienceToEdit.description ?? '',
+      skillIds: experienceToEdit.skills?.map((skill) => skill.id) ?? [],
+    } : defaults);
+  }, [isOpen, experienceToEdit, reset]);
+
+  async function submit(data: Values) {
+    const payload = {
+      ...data,
+      startDate: utcDate(data.startDate),
+      endDate: data.endDate ? utcDate(data.endDate) : null,
+      description: data.description || null,
+      isImportedFromLinkedIn: experienceToEdit?.isImportedFromLinkedIn ?? false,
+    };
+    try {
+      if (experienceToEdit) {
+        await update.mutateAsync({ id: experienceToEdit.id, data: payload });
+      } else {
+        await create.mutateAsync(payload);
+      }
+      toast.success(experienceToEdit ? 'Experiencia actualizada' : 'Experiencia creada');
+      onClose();
+    } catch (error) {
+      showFormError(error, schema.shape, setError, 'No se pudo guardar la experiencia.');
+    }
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} busy={busy} title={experienceToEdit ? 'Editar experiencia' : 'Nueva experiencia'} size="lg">
+      <form noValidate className={styles.form} onSubmit={handleSubmit(submit)}>
+        <fieldset className={styles.fieldset} disabled={isSubmitting}>
+          <AdminInput label="Cargo" required autofocus {...register('role')} error={errors.role?.message} />
+          <AdminInput label="Empresa" required {...register('company')} error={errors.company?.message} />
+          <div className={styles.fields}>
+            <AdminInput label="Fecha de inicio" type="date" required {...register('startDate')} error={errors.startDate?.message} />
+            <AdminInput label="Fecha de fin" type="date" hint="Deja en blanco si sigue en curso." {...register('endDate')} error={errors.endDate?.message} />
+          </div>
+          <AdminTextarea label="Descripción" rows={4} {...register('description')} error={errors.description?.message} />
+        </fieldset>
+        <Controller
+          name="skillIds"
+          control={control}
+          render={({ field, fieldState }) => (
+            <SkillSelector skills={skills.data?.data ?? []} selectedIds={field.value} onChange={field.onChange}
+              disabled={isSubmitting} error={fieldState.error?.message} loading={skills.isLoading} loadError={skills.isError}
+              onRetry={() => void skills.refetch()} onCreatingChange={setCreatingSkill} />
+          )}
+        />
+        {errors.root?.server?.message && <p role="alert" className={styles.notice}>{errors.root.server.message}</p>}
+        <AdminFormActions busy={busy} onClose={onClose} submitLabel={experienceToEdit ? 'Guardar cambios' : 'Crear experiencia'} />
+      </form>
+    </Modal>
+  );
+}

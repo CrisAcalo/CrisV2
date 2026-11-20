@@ -1,0 +1,36 @@
+.content {
+  max-width: 52rem;
+  margin-inline: auto;
+  padding-block: clamp(2.5rem, 7vw, 5.5rem);
+  overflow-wrap: anywhere;
+}
+
+.showcased {
+  max-width: 72rem;
+}
+
+.back {
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin-bottom: 1.25rem;
+  font-size: clamp(3rem, 8vw, 5.25rem);
+  line-height: 1;
+}
+
+.description {
+  max-width: 65ch;
+  color: var(--portfolio-copy);
+  line-height: 1.75;
+  white-space: pre-line;
+  font-size: 1.08rem;
+}
+
+.links {
+  margin-top: 1rem;
+}
+
+.content > [data-project-showcase] {
+  margin-top: 2rem;
+}

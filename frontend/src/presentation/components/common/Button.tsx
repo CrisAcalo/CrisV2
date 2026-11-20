@@ -15,7 +15,6 @@ type VariantKey =
 
 const VARIANTS: Record<VariantKey, React.CSSProperties> = {
   primary: {
-    // @ts-ignore
     '--_bg': 'var(--accent)',
     '--_fg': '#fff',
     '--_border': 'none',
@@ -24,14 +23,12 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 20px var(--accent-glow)',
   } as React.CSSProperties,
   secondary: {
-    // @ts-ignore
     '--_bg': 'var(--surface-raised)',
     '--_fg': 'var(--text-primary)',
     '--_border': '1px solid var(--surface-border)',
     '--_bg-h': 'var(--surface-border)',
   } as React.CSSProperties,
   outline: {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': 'var(--text-secondary)',
     '--_border': '1px solid var(--surface-border)',
@@ -39,7 +36,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_fg-h': 'var(--text-primary)',
   } as React.CSSProperties,
   ghost: {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': 'var(--text-secondary)',
     '--_border': '1px solid transparent',
@@ -47,7 +43,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_fg-h': 'var(--text-primary)',
   } as React.CSSProperties,
   danger: {
-    // @ts-ignore
     '--_bg': '#dc2626',
     '--_fg': '#fff',
     '--_border': 'none',
@@ -56,7 +51,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 18px rgba(220,38,38,0.35)',
   } as React.CSSProperties,
   info: {
-    // @ts-ignore
     '--_bg': '#0891b2',
     '--_fg': '#fff',
     '--_border': 'none',
@@ -65,7 +59,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 18px rgba(8,145,178,0.35)',
   } as React.CSSProperties,
   'primary-light': {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': 'var(--accent)',
     '--_border': '1px solid var(--accent)',
@@ -74,7 +67,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 18px var(--accent-glow)',
   } as React.CSSProperties,
   'secondary-light': {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': 'var(--text-secondary)',
     '--_border': '1px solid var(--surface-border)',
@@ -82,7 +74,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_fg-h': 'var(--text-primary)',
   } as React.CSSProperties,
   'danger-light': {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': '#dc2626',
     '--_border': '1px solid #dc2626',
@@ -91,7 +82,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 18px rgba(220,38,38,0.3)',
   } as React.CSSProperties,
   'info-light': {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': '#0891b2',
     '--_border': '1px solid #0891b2',
@@ -100,7 +90,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 18px rgba(8,145,178,0.3)',
   } as React.CSSProperties,
   'success-light': {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': '#16a34a',
     '--_border': '1px solid #16a34a',
@@ -109,7 +98,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 18px rgba(22,163,74,0.3)',
   } as React.CSSProperties,
   'warning-light': {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': '#d97706',
     '--_border': '1px solid #d97706',
@@ -118,7 +106,6 @@ const VARIANTS: Record<VariantKey, React.CSSProperties> = {
     '--_shadow-h': '0 0 18px rgba(217,119,6,0.3)',
   } as React.CSSProperties,
   'ghost-light': {
-    // @ts-ignore
     '--_bg': 'transparent',
     '--_fg': 'var(--text-muted)',
     '--_border': '1px solid var(--surface-border)',

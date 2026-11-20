@@ -22,7 +22,8 @@ export const createExperienceSchema = z.object({
         startDate: z.string().datetime().or(z.date()),
         endDate: z.string().datetime().or(z.date()).optional().nullable(),
         description: z.string().optional().nullable(),
-        isImportedFromLinkedIn: z.boolean().default(false)
+        isImportedFromLinkedIn: z.boolean().default(false),
+        skillIds: z.array(z.string().uuid()).optional(),
     }).superRefine(dateRefinement)
 });
 
@@ -33,7 +34,8 @@ export const updateExperienceSchema = z.object({
         startDate: z.string().datetime().or(z.date()).optional(),
         endDate: z.string().datetime().or(z.date()).optional().nullable(),
         description: z.string().optional().nullable(),
-        isImportedFromLinkedIn: z.boolean().optional()
+        isImportedFromLinkedIn: z.boolean().optional(),
+        skillIds: z.array(z.string().uuid()).optional(),
     }).superRefine(dateRefinement),
     params: z.object({
         id: z.string().uuid('ID de experiencia no válido')

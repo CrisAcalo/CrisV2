@@ -1,84 +1,93 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { Button } from './Button';
+import styles from '../admin/AdminDialog.module.css';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  busy?: boolean;
+  descriptionId?: string;
 }
 
-const sizeClass: Record<string, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
-};
+const tabbable = 'button, input, select, textarea, a[href], [tabindex]';
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
+export function Modal({ isOpen, onClose, title, children, size = 'md', busy = false, descriptionId }: ModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const wasBusy = useRef(false);
+  const titleId = useId();
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
+    const dialog = dialogRef.current;
+    if (!isOpen || !dialog) return;
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    dialog.querySelector<HTMLElement>('[data-dialog-autofocus]')?.focus();
+    document.body.style.overflow = 'hidden';
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) {
+        previousFocus.focus({ preventScroll: true });
+      }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && wasBusy.current && !busy) {
+      dialogRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]:not(:disabled)')?.focus();
+    }
+    wasBusy.current = busy;
+  }, [busy, isOpen]);
+
+  function keepTabInDialog(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.key !== 'Tab') return;
+
+    const controls = [...event.currentTarget.querySelectorAll<HTMLElement>(tabbable)].filter(
+      (element) => element.tabIndex >= 0 && !element.matches(':disabled') && element.getClientRects().length > 0,
+    );
+    const first = controls[0];
+    const last = controls.at(-1);
+    const active = document.activeElement;
+
+    if (!first) {
+      event.preventDefault();
+      return;
+    }
+    if (event.shiftKey ? active === first || !controls.includes(active as HTMLElement) : active === last) {
+      event.preventDefault();
+      (event.shiftKey ? last : first)?.focus();
+    }
+  }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-0">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 backdrop-blur-sm"
-            style={{ background: 'rgba(0,0,0,0.5)' }}
-          />
-          <motion.div
-            ref={modalRef}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className={`relative w-full ${sizeClass[size]} overflow-hidden rounded-2xl shadow-2xl text-left align-middle`}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--surface-border)',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
-            }}
-          >
-            <div className="flex items-center justify-between mb-5 pt-6 px-6">
-              <h3 className="text-xl font-bold leading-6" style={{ color: 'var(--text-primary)' }}>
-                {title}
-              </h3>
-              <Button variant="ghost" size="sm" onClick={onClose} className="p-1 h-10 w-10 rounded-full">
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto px-6 pb-6 custom-scrollbar">
-              {children}
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+    <dialog
+      ref={dialogRef}
+      className={styles.dialog}
+      data-size={size}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+      aria-busy={busy || undefined}
+      onKeyDown={keepTabInDialog}
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!busy) onClose();
+      }}
+    >
+      <div className={styles.header}>
+        <h2 id={titleId}>{title}</h2>
+        <button type="button" className={styles.close} aria-label="Cerrar diálogo" disabled={busy} onClick={onClose}>
+          <X size={20} aria-hidden="true" />
+        </button>
+      </div>
+      {isOpen && <div className={styles.content}>{children}</div>}
+    </dialog>
   );
-};
+}

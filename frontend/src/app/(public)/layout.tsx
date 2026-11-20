@@ -1,72 +1,63 @@
 import type { Metadata } from 'next';
+import { Barlow_Condensed } from 'next/font/google';
 import { ReactNode } from 'react';
-import { PublicNavbar } from '../../presentation/components/common/PublicNavbar';
-import Link from 'next/link';
 import { Github, Linkedin, Mail } from 'lucide-react';
 import { InteractiveBackground } from '../../presentation/components/public/InteractiveBackground';
-import { PageLoader } from '../../presentation/components/common/PageLoader';
-import { CaLogo } from '../../presentation/components/common/CaLogo';
+import './portfolio.css';
+
+const barlowCondensed = Barlow_Condensed({
+  weight: '600',
+  subsets: ['latin'],
+  variable: '--portfolio-display-font',
+});
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://crisacalo.com'),
   title: 'Cristian Acalo | Ingeniero de Software',
-  description: 'Portafolio Profesional de Cristian Acalo, desarrollador especializado en arquitecturas limpias, rendimiento y experiencias de usuario de alto impacto.',
+  description: 'Proyectos y trayectoria de Cristian Acalo, desarrollador de software full stack especializado en automatización e integración de modelos de lenguaje.',
+  alternates: { canonical: '/' },
   keywords: ['Software Engineer', 'Full Stack Developer', 'Next.js', 'TypeScript', 'Node.js', 'Clean Architecture'],
   openGraph: {
     title: 'Cristian Acalo | Ingeniero de Software',
-    description: 'Descubre mis proyectos destacados y trayectoria construyendo software escalable.',
-    url: 'https://crisacalo.com',
+    description: 'Proyectos de desarrollo full stack, automatización e integración de modelos de lenguaje.',
+    url: '/',
     siteName: 'Cristian Acalo Portfolio',
     images: [
       {
-        url: '/og-image.jpg', // Placeholder for upcoming OG Image
+        url: '/og-image.svg',
         width: 1200,
         height: 630,
         alt: 'Cristian Acalo Portfolio Cover',
       },
     ],
-    locale: 'es_ES',
+    locale: 'es_EC',
     type: 'website',
   },
 };
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col selection:bg-[var(--accent)] selection:text-white">
-      {/* Page Loader — fades out once window.load fires */}
-      <PageLoader />
+    <div className={`${barlowCondensed.variable} portfolio min-h-screen flex flex-col`}>
+      <a className="portfolio-skip" href="#portfolio-content">Ir al contenido</a>
 
-      {/* Public Navbar (Client Component for Mobile Menu) */}
-      <PublicNavbar />
-
-      {/* Global Interactive Background */}
       <InteractiveBackground />
 
-      {/* Main Content */}
-      <main className="flex-grow pt-20 overflow-x-hidden">
-        {children}
-      </main>
+      {children}
 
-      {/* Public Footer */}
-      <footer className="border-t border-[var(--surface-border)] relative overflow-hidden">
-        {/* Subtle background glow */}
+      <footer className="portfolio-footer relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[var(--accent)] opacity-[0.03] blur-[120px] rounded-full pointer-events-none" />
 
-        <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-3">
-            <CaLogo size={36} />
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              © {new Date().getFullYear()} Cristian Acalo. Construido con arquitectura limpia.
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <a href="https://github.com/CrisAcalo" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full glass hover:-translate-y-1 transition-transform" style={{ color: 'var(--text-secondary)' }}>
-              <Github size={18} />
+        <div className="portfolio-shell portfolio-footer-inner">
+          <p>© {new Date().getFullYear()} Cristian Acalo</p>
+          <div className="portfolio-actions">
+            <a href="https://github.com/CrisAcalo" target="_blank" rel="noopener noreferrer" className="portfolio-link">
+              <Github aria-hidden="true" size={17} /> GitHub
             </a>
-            <a href="https://www.linkedin.com/in/cristianacalo/" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full glass hover:-translate-y-1 transition-transform" style={{ color: 'var(--text-secondary)' }}>
-              <Linkedin size={18} />
+            <a href="https://www.linkedin.com/in/cristianacalo/" target="_blank" rel="noopener noreferrer" className="portfolio-link">
+              <Linkedin aria-hidden="true" size={17} /> LinkedIn
             </a>
-            <a href="mailto:cristianchoacalo@gmail.com" className="p-2 rounded-full glass hover:-translate-y-1 transition-transform" style={{ color: 'var(--text-secondary)' }}>
-              <Mail size={18} />
+            <a href="mailto:cristianchoacalo@gmail.com" className="portfolio-link">
+              <Mail aria-hidden="true" size={17} /> Correo
             </a>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { LinkedInUseCase } from '../../application/use-cases/LinkedInUseCase';
+import { getApiErrorMessage } from '../utils/apiErrors';
 
 export const useSyncLinkedIn = () => {
     const queryClient = useQueryClient();
@@ -15,8 +16,8 @@ export const useSyncLinkedIn = () => {
                 toast.warning(response.data.message);
             }
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al sincronizar Experiencias (Revisa tu URN o Tokens).');
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, 'Error al sincronizar Experiencias (Revisa tu URN o Tokens).'));
         }
     });
 
@@ -30,8 +31,8 @@ export const useSyncLinkedIn = () => {
                 toast.warning(response.data.message);
             }
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al sincronizar Educación (Revisa tu URN o Tokens).');
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, 'Error al sincronizar Educación (Revisa tu URN o Tokens).'));
         }
     });
 
@@ -45,8 +46,8 @@ export const useSyncLinkedIn = () => {
                 toast.warning(response.data.message);
             }
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.message || 'Error al sincronizar Certificados (Revisa tu URN o Tokens).');
+        onError: (error) => {
+            toast.error(getApiErrorMessage(error, 'Error al sincronizar Certificados (Revisa tu URN o Tokens).'));
         }
     });
 

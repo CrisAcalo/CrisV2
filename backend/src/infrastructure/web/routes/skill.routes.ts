@@ -7,7 +7,7 @@ import {
     createSkillSchema, updateSkillSchema,
     getSkillByIdSchema, deleteSkillSchema,
 } from '../middlewares/validators/skill.validator';
-import { authGuard, requireRole } from '../middlewares/authGuard';
+import { authGuard, optionalAuth, requireAdminForDeleted, requireRole } from '../middlewares/authGuard';
 
 const router = Router();
 
@@ -108,7 +108,7 @@ const requireAdmin = requireRole('ADMIN');
  *                   items:
  *                     $ref: '#/components/schemas/Skill'
  */
-router.get('/', skillController.getAllSkills);
+router.get('/', optionalAuth, requireAdminForDeleted, skillController.getAllSkills);
 
 // ─── GET /api/skills/:id ──────────────────────────────────────────────────────
 /**
@@ -140,7 +140,7 @@ router.get('/', skillController.getAllSkills);
  *       404:
  *         description: Skill not found
  */
-router.get('/:id', validateRequest(getSkillByIdSchema), skillController.getSkillById);
+router.get('/:id', optionalAuth, validateRequest(getSkillByIdSchema), skillController.getSkillById);
 
 // ─── POST /api/skills ─────────────────────────────────────────────────────────
 /**

@@ -6,6 +6,10 @@ interface ListResponse<T> {
     data: T[];
 }
 
+export type ProjectInput = Pick<Project, 'title' | 'description' | 'isPublished'>
+    & Partial<Pick<Project, 'imageUrl' | 'repoUrl' | 'liveUrl' | 'isFeatured' | 'caseStudy'>>
+    & { skillIds?: string[] };
+
 export class ProjectUseCase {
     static async getProjects(includeDeleted = false): Promise<ListResponse<Project>> {
         const { data } = await axiosClient.get<ListResponse<Project>>(
@@ -19,12 +23,12 @@ export class ProjectUseCase {
         return data;
     }
 
-    static async createProject(project: Omit<Project, 'id'>): Promise<{ status: string; data: Project }> {
+    static async createProject(project: ProjectInput): Promise<{ status: string; data: Project }> {
         const { data } = await axiosClient.post<{ status: string; data: Project }>('/projects', project);
         return data;
     }
 
-    static async updateProject(id: string, project: Partial<Project>): Promise<{ status: string; data: Project }> {
+    static async updateProject(id: string, project: Partial<ProjectInput>): Promise<{ status: string; data: Project }> {
         const { data } = await axiosClient.patch<{ status: string; data: Project }>(`/projects/${id}`, project);
         return data;
     }

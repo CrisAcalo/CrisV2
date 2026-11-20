@@ -13,8 +13,8 @@ export const useUpdateSettings = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data: Partial<SystemConfiguration>) => SettingsUseCase.updateSettings(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['settings'] });
+        onSuccess: (settings) => {
+            queryClient.setQueryData(['settings'], settings);
         },
     });
 };

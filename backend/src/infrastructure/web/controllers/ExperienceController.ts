@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ExperienceUseCases } from '../../../application/use-cases/ExperienceUseCases';
+import { publicSkillReferences } from './publicSkillReferences';
 
 export class ExperienceController {
     constructor(private experienceUseCases: ExperienceUseCases) { }
@@ -7,12 +8,24 @@ export class ExperienceController {
     getAllExperiences = async (req: Request, res: Response): Promise<void> => {
         const includeDeleted = req.query.deleted === 'true';
         const experiences = await this.experienceUseCases.getAllExperiences(includeDeleted);
-        res.json({ status: 'success', data: experiences });
+        res.json({
+            status: 'success',
+            data: req.user?.role === 'ADMIN' ? experiences : experiences.map(experience => ({
+                ...experience,
+                skills: publicSkillReferences(experience.skills),
+            })),
+        });
     }
 
     getExperienceById = async (req: Request, res: Response): Promise<void> => {
         const experience = await this.experienceUseCases.getExperienceById(req.params.id as string);
-        res.json({ status: 'success', data: experience });
+        res.json({
+            status: 'success',
+            data: req.user?.role === 'ADMIN' ? experience : {
+                ...experience,
+                skills: publicSkillReferences(experience.skills),
+            },
+        });
     }
 
     createExperience = async (req: Request, res: Response): Promise<void> => {

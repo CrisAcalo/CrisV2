@@ -1,0 +1,20 @@
+.login-shell input {
+  border-color: var(--admin-control-border);
+}
+
+.login-shell input:focus {
+  border-color: var(--admin-accent);
+}
+
+.login-shell .login-submit.btn,
+.login-shell .login-submit.btn:hover {
+  color: var(--admin-on-accent);
+  box-shadow: none;
+}
+
+.login-shell .login-error {
+  border-radius: .5rem;
+  padding: .65rem .8rem;
+  background: var(--admin-soft-danger);
+  color: var(--admin-danger);
+}

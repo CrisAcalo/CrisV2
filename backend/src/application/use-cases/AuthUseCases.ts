@@ -1,67 +1,47 @@
+import { randomUUID } from 'node:crypto';
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
-import { hashPassword, comparePasswords } from '../../utils/crypto';
-import { generateToken } from '../../utils/jwt';
+import { Role, User } from '../../domain/entities';
 import { BadRequestError, UnauthorizedError } from '../../domain/errors/AppError';
-import { User, Role } from '../../domain/entities';
+import { comparePasswords, hashPassword } from '../../utils/crypto';
 
-// Interfaces for DTOs
-export interface RegisterDTO {
-    email: string;
-    passwordHash: string; // En realidad recibimos password plana de DTO, renombramos en params
-    role?: Role;
-}
+type LoginDTO = { email: string; password: string; otp?: string };
+type RegisterDTO = Omit<LoginDTO, 'otp'> & { role?: Role };
+type PublicUser = Pick<User, 'id' | 'email' | 'role'>;
+type SessionCredentials = { token: string; expiresAt: Date };
 
-export interface LoginDTO {
-    email: string;
-    passwordHash: string; // Recibimos password plana
+// A bcrypt hash of a discarded random string, for equivalent work on missing users.
+const dummyHash = '$2b$10$86ipvPOmcMcjnmL9o.pEGuyvj2qam7nUtczcRH156sLOrnyGJXpXa';
+
+function publicIdentity({ id, email, role }: User): PublicUser {
+    return { id, email, role };
 }
 
 export class AuthUseCases {
-    constructor(private userRepository: IUserRepository) { }
+    constructor(
+        private userRepository: IUserRepository,
+        private issueSession: (user: User, otp?: string) => Promise<SessionCredentials>,
+    ) { }
 
-    async register(data: RegisterDTO): Promise<{ user: Partial<User>, token: string }> {
+    async register(data: RegisterDTO): Promise<{ user: PublicUser }> {
         const existingUser = await this.userRepository.findByEmail(data.email);
-        if (existingUser) {
-            throw new BadRequestError('Email already registered');
-        }
+        if (existingUser) throw new BadRequestError('Email already registered');
 
-        const hashedPassword = await hashPassword(data.passwordHash);
-
-        // TODO: Utilizar uuid para generar ids
-        const newUser: User = {
-            id: crypto.randomUUID(),
+        const user = await this.userRepository.save({
+            id: randomUUID(),
             email: data.email,
-            passwordHash: hashedPassword,
-            role: data.role || Role.BASIC,
-        };
-
-        const savedUser = await this.userRepository.save(newUser);
-
-        const token = generateToken({ userId: savedUser.id, role: savedUser.role });
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { passwordHash, ...userWithoutPassword } = savedUser;
-
-        return { user: userWithoutPassword, token };
+            passwordHash: await hashPassword(data.password),
+            role: data.role ?? Role.BASIC,
+        });
+        return { user: publicIdentity(user) };
     }
 
-    async login(data: LoginDTO): Promise<{ user: Partial<User>, token: string }> {
+    async login(data: LoginDTO): Promise<{ user: PublicUser } & SessionCredentials> {
         const user = await this.userRepository.findByEmail(data.email);
-
-        if (!user) {
+        const isPasswordValid = await comparePasswords(data.password, user?.passwordHash ?? dummyHash);
+        if (!user || user.deletedAt || !isPasswordValid) {
             throw new UnauthorizedError('Invalid credentials');
         }
 
-        const isPasswordValid = await comparePasswords(data.passwordHash, user.passwordHash);
-        if (!isPasswordValid) {
-            throw new UnauthorizedError('Invalid credentials');
-        }
-
-        const token = generateToken({ userId: user.id, role: user.role });
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { passwordHash, ...userWithoutPassword } = user;
-
-        return { user: userWithoutPassword, token };
+        return { user: publicIdentity(user), ...await this.issueSession(user, data.otp) };
     }
 }

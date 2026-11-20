@@ -1,17 +1,18 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from './client';
 import { IEducationRepository } from '../../../domain/repositories/IEducationRepository';
 import { Education } from '../../../domain/entities';
 
 const WITH_SKILLS = {
     include: {
-        skills: { include: { skill: { select: { id: true, name: true } } } }
+        skills: { include: { skill: { select: { id: true, name: true, isPublic: true, deletedAt: true } } } }
     }
 } as const;
 
-function mapEducation(raw: any): Education {
+function mapEducation(raw: Prisma.EducationGetPayload<typeof WITH_SKILLS>): Education {
     return {
         ...raw,
-        skills: raw.skills?.map((s: any) => ({ id: s.skill.id, name: s.skill.name })) ?? [],
+        skills: raw.skills.map(({ skill }) => skill),
     };
 }
 

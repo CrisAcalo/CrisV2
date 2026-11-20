@@ -4,7 +4,7 @@ import { ExperienceUseCases } from '../../../application/use-cases/ExperienceUse
 import { PrismaExperienceRepository } from '../../database/prisma/PrismaExperienceRepository';
 import { validateRequest } from '../middlewares/validateRequest';
 import { createExperienceSchema, updateExperienceSchema, getExperienceByIdSchema, deleteExperienceSchema } from '../middlewares/validators/experience.validator';
-import { authGuard, requireRole } from '../middlewares/authGuard';
+import { authGuard, optionalAuth, requireAdminForDeleted, requireRole } from '../middlewares/authGuard';
 
 const router = Router();
 
@@ -62,7 +62,7 @@ const experienceController = new ExperienceController(experienceUseCases);
  *               items:
  *                 $ref: '#/components/schemas/Experience'
  */
-router.get('/', experienceController.getAllExperiences);
+router.get('/', optionalAuth, requireAdminForDeleted, experienceController.getAllExperiences);
 
 /**
  * @swagger
@@ -86,7 +86,7 @@ router.get('/', experienceController.getAllExperiences);
  *       404:
  *         description: Experience not found
  */
-router.get('/:id', validateRequest(getExperienceByIdSchema), experienceController.getExperienceById);
+router.get('/:id', optionalAuth, validateRequest(getExperienceByIdSchema), experienceController.getExperienceById);
 
 // Protected Routes (Admin Only)
 const requireAdmin = requireRole('ADMIN');

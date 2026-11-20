@@ -1,0 +1,45 @@
+.article {
+  scroll-margin-top: 6.25rem;
+}
+
+.article:is(:target, [data-project-featured]) {
+  border-top-color: var(--portfolio-action);
+}
+
+.featured {
+  display: block;
+  width: fit-content;
+  margin-bottom: .5rem;
+  color: var(--portfolio-action);
+  font-size: .82rem;
+  font-weight: 650;
+  text-shadow: 0 0 .75rem var(--portfolio-glow);
+}
+
+.showcased > :global(.portfolio-project-header) h3 {
+  max-width: 18ch;
+  font: 600 clamp(2.8rem, 6vw, 5.2rem) / .96 var(--portfolio-display-font), var(--font-inter), sans-serif;
+  letter-spacing: -.03em;
+  text-wrap: balance;
+}
+
+.showcased > [data-project-showcase] {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+@media (width >= 900px) {
+  .showcased > :global(.portfolio-project-details) {
+    align-self: end;
+    padding-bottom: .5rem;
+  }
+
+  .article:has(> :global(.portfolio-project-media)) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .article > :global(.portfolio-project-media) {
+    grid-area: 1 / 2 / 3;
+  }
+}

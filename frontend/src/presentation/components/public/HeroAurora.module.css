@@ -1,0 +1,24 @@
+.light {
+  transform: var(--aurora-start);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .light {
+    animation: drift var(--aurora-duration) ease-in-out infinite paused;
+  }
+
+  [data-aurora-playing] > .light {
+    animation-play-state: running;
+    will-change: transform;
+  }
+}
+
+@keyframes drift {
+  0%, 100% {
+    transform: var(--aurora-start);
+  }
+
+  50% {
+    transform: var(--aurora-middle);
+  }
+}

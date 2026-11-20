@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // A single "star" flash on a grid point
 interface StarPoint {
@@ -12,45 +12,75 @@ interface StarPoint {
 const GRID_SIZE = 40;
 const MAX_STARS = 30;       // how many can be visible simultaneously
 const SPAWN_INTERVAL = 200; // ms between spawns
-
-let _id = 0;
+const FLASHLIGHT_MASK = 'radial-gradient(350px circle at var(--flashlight-position, 0px 0px), black, transparent)';
 
 export const InteractiveBackground = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const flashlight = useRef<HTMLDivElement>(null);
   const [stars, setStars] = useState<StarPoint[]>([]);
 
-  // Track mouse for the linterna effect
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    const mask = flashlight.current;
+    if (!mask) return;
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let frame: number | undefined;
+    let interval: number | undefined;
+    let x = 0;
+    let y = 0;
+    let nextStarId = 0;
+
+    const moveFlashlight = (event: MouseEvent) => {
+      x = event.clientX;
+      y = event.clientY;
+      frame ??= window.requestAnimationFrame(() => {
+        mask.style.setProperty('--flashlight-position', `${x}px ${y}px`);
+        frame = undefined;
+      });
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+
+    const spawnStar = () => {
+      const cols = Math.floor(window.innerWidth / GRID_SIZE);
+      const rows = Math.floor(window.innerHeight / GRID_SIZE);
+      const star = {
+        id: nextStarId++,
+        x: Math.floor(Math.random() * cols) * GRID_SIZE + GRID_SIZE / 2,
+        y: Math.floor(Math.random() * rows) * GRID_SIZE + GRID_SIZE / 2,
+      };
+      setStars((previous) => [...previous.slice(-(MAX_STARS - 1)), star]);
+    };
+
+    const start = () => {
+      window.addEventListener('mousemove', moveFlashlight, { passive: true });
+      interval = window.setInterval(spawnStar, SPAWN_INTERVAL);
+    };
+    const stop = () => {
+      window.removeEventListener('mousemove', moveFlashlight);
+      window.clearInterval(interval);
+      if (frame !== undefined) window.cancelAnimationFrame(frame);
+      frame = undefined;
+    };
+    const shouldRun = () => !document.hidden && !preference.matches;
+    const updateActivity = () => {
+      stop();
+      if (shouldRun()) {
+        start();
+      } else {
+        setStars([]);
+        if (preference.matches) mask.style.removeProperty('--flashlight-position');
+      }
+    };
+
+    if (shouldRun()) start();
+    document.addEventListener('visibilitychange', updateActivity);
+    preference.addEventListener('change', updateActivity);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', updateActivity);
+      preference.removeEventListener('change', updateActivity);
+    };
   }, []);
-
-  // Spawn random star on a grid point
-  const spawnStar = useCallback(() => {
-    const cols = Math.floor(window.innerWidth / GRID_SIZE);
-    const rows = Math.floor(window.innerHeight / GRID_SIZE);
-    const x = Math.floor(Math.random() * cols) * GRID_SIZE + GRID_SIZE / 2;
-    const y = Math.floor(Math.random() * rows) * GRID_SIZE + GRID_SIZE / 2;
-    const id = ++_id;
-
-    setStars(prev => [...prev.slice(-(MAX_STARS - 1)), { id, x, y }]);
-
-    // Remove the star after its animation completes (1.8s)
-    setTimeout(() => {
-      setStars(prev => prev.filter(s => s.id !== id));
-    }, 1800);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(spawnStar, SPAWN_INTERVAL);
-    return () => clearInterval(interval);
-  }, [spawnStar]);
 
   return (
-    <div className="fixed inset-0 w-full h-full pointer-events-none" style={{ zIndex: -10 }}>
+    <div aria-hidden="true" className="fixed inset-0 w-full h-full pointer-events-none" style={{ zIndex: -10 }}>
 
       {/* 1. Base grid — always visible, very subtle */}
       <div
@@ -63,12 +93,13 @@ export const InteractiveBackground = () => {
 
       {/* 2. Mouse linterna — reveals accent-coloured grid */}
       <div
+        ref={flashlight}
         className="absolute inset-0 opacity-100"
         style={{
           backgroundImage: 'radial-gradient(var(--accent) 2px, transparent 2px)',
           backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-          WebkitMaskImage: `radial-gradient(350px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`,
-          maskImage: `radial-gradient(350px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`,
+          WebkitMaskImage: FLASHLIGHT_MASK,
+          maskImage: FLASHLIGHT_MASK,
         }}
       />
 
@@ -77,6 +108,7 @@ export const InteractiveBackground = () => {
         <span
           key={star.id}
           className="absolute rounded-full"
+          onAnimationEnd={() => setStars((previous) => previous.filter((point) => point.id !== star.id))}
           style={{
             left: star.x,
             top: star.y,

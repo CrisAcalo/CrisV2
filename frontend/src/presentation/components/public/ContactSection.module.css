@@ -1,0 +1,235 @@
+.layout {
+  display: grid;
+  align-items: start;
+  gap: clamp(1.75rem, 5vw, 5rem);
+}
+
+.intro {
+  position: relative;
+  min-width: 0;
+}
+
+.introDetails {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.introDetails::before {
+  content: '';
+  position: absolute;
+  inset: -.45rem auto auto 0;
+  width: min(62%, 14rem);
+  height: 2px;
+  background: linear-gradient(90deg, var(--portfolio-action), transparent);
+  opacity: .68;
+  transform: scaleX(calc(.12 + .88 * var(--reveal-progress)));
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .introDetails .channels {
+    transform: translateY(calc(8px * (1 - var(--reveal-progress))));
+  }
+}
+
+.channels {
+  max-width: 24rem;
+  margin: clamp(1.35rem, 3vw, 2rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: 1px solid var(--portfolio-line);
+}
+
+.channels li {
+  border-block-end: 1px solid var(--portfolio-line);
+}
+
+.channel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: .7rem;
+  align-items: center;
+  min-height: 3.25rem;
+  padding: .55rem .3rem;
+}
+
+.channel:hover {
+  background: color-mix(in srgb, var(--portfolio-action) 7%, transparent);
+}
+
+.channel svg,
+.channelName {
+  color: var(--portfolio-action);
+}
+
+.channelName {
+  display: block;
+  font-size: .91rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.channelDetail {
+  display: block;
+  margin-top: .2rem;
+  color: var(--portfolio-copy);
+  font-size: .85rem;
+  overflow-wrap: anywhere;
+}
+
+.composer {
+  position: relative;
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.85rem);
+  border: 1px solid var(--portfolio-line);
+  border-top: 2px solid color-mix(in srgb, var(--portfolio-action) 65%, var(--portfolio-line));
+  border-radius: .6rem;
+  background: var(--bg);
+}
+
+.composer::before {
+  content: '';
+  position: absolute;
+  inset: .65rem auto .65rem -1px;
+  width: 2px;
+  background: linear-gradient(var(--portfolio-neon), var(--portfolio-aurora-blue) 68%, transparent);
+  opacity: .78;
+  transform: scaleY(calc(.08 + .92 * var(--reveal-progress)));
+  transform-origin: top center;
+  pointer-events: none;
+}
+
+.form,
+.fieldPair {
+  display: grid;
+  gap: 1rem;
+}
+
+.form label {
+  display: block;
+  margin-bottom: .4rem;
+  font-size: .89rem;
+  font-weight: 650;
+}
+
+.form :is(input, textarea) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.85rem;
+  padding: .65rem .75rem;
+  scroll-margin-block: 6rem 2rem;
+  border: 1px solid var(--portfolio-line);
+  border-radius: .375rem;
+  background: var(--portfolio-input);
+  color: var(--portfolio-ink);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.form textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.form [aria-invalid="true"] {
+  border-color: var(--portfolio-error);
+}
+
+.fieldError {
+  margin-top: .35rem;
+  color: var(--portfolio-error);
+  font-size: .83rem;
+  line-height: 1.4;
+}
+
+.messageMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .65rem;
+  margin-top: .45rem;
+  color: var(--portfolio-muted);
+  font-size: .81rem;
+}
+
+.messageMeta .fieldError {
+  margin: 0;
+}
+
+.counter {
+  flex: none;
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1rem;
+  margin-top: .15rem;
+}
+
+.submit {
+  min-width: 10.25rem;
+}
+
+.status {
+  min-width: 0;
+}
+
+.status[data-state] {
+  flex: 1 1 13rem;
+  font-size: .85rem;
+  color: var(--portfolio-copy);
+}
+
+.status[data-state="error"] {
+  color: var(--portfolio-error);
+}
+
+.status p {
+  display: flex;
+  align-items: flex-start;
+  gap: .45rem;
+}
+
+.status svg {
+  flex: none;
+}
+
+.status[data-state="success"] svg {
+  color: var(--portfolio-action);
+}
+
+@media (min-width: 560px) {
+  .fieldPair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  }
+}
+
+@media (width < 460px) {
+  .submit {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spinner {
+    animation: spin .85s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -19,7 +19,8 @@ export const createEducationSchema = z.object({
         institution: z.string().min(1, 'La institución es obligatoria'),
         degree: z.string().min(1, 'La titulación es obligatoria'),
         startDate: z.string().datetime().or(z.date()),
-        endDate: z.string().datetime().or(z.date()).optional().nullable()
+        endDate: z.string().datetime().or(z.date()).optional().nullable(),
+        skillIds: z.array(z.string().uuid()).optional(),
     }).superRefine(dateRefinement)
 });
 
@@ -28,7 +29,8 @@ export const updateEducationSchema = z.object({
         institution: z.string().min(1, 'La institución es obligatoria').optional(),
         degree: z.string().min(1, 'La titulación es obligatoria').optional(),
         startDate: z.string().datetime().or(z.date()).optional(),
-        endDate: z.string().datetime().or(z.date()).optional().nullable()
+        endDate: z.string().datetime().or(z.date()).optional().nullable(),
+        skillIds: z.array(z.string().uuid()).optional(),
     }).superRefine(dateRefinement),
     params: z.object({
         id: z.string().uuid('ID de educación no válido')

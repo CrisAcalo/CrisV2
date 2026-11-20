@@ -4,7 +4,7 @@ import { CertificateUseCases } from '../../../application/use-cases/CertificateU
 import { PrismaCertificateRepository } from '../../database/prisma/PrismaCertificateRepository';
 import { validateRequest } from '../middlewares/validateRequest';
 import { createCertificateSchema, updateCertificateSchema, getCertificateByIdSchema, deleteCertificateSchema } from '../middlewares/validators/certificate.validator';
-import { authGuard, requireRole } from '../middlewares/authGuard';
+import { authGuard, optionalAuth, requireAdminForDeleted, requireRole } from '../middlewares/authGuard';
 
 const router = Router();
 
@@ -56,7 +56,7 @@ const certificateController = new CertificateController(certificateUseCases);
  *               items:
  *                 $ref: '#/components/schemas/Certificate'
  */
-router.get('/', certificateController.getAllCertificates);
+router.get('/', optionalAuth, requireAdminForDeleted, certificateController.getAllCertificates);
 
 /**
  * @swagger

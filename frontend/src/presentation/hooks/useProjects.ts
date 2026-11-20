@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ProjectUseCase } from '../../application/use-cases/ProjectUseCase';
-import { Project } from '../../domain/entities';
+import { ProjectUseCase, ProjectInput } from '../../application/use-cases/ProjectUseCase';
 
 export const useProjects = (includeDeleted = false) => {
     return useQuery({
@@ -20,7 +19,7 @@ export const useProject = (id: string) => {
 export const useCreateProject = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (project: Omit<Project, 'id'>) => ProjectUseCase.createProject(project),
+        mutationFn: (project: ProjectInput) => ProjectUseCase.createProject(project),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
         },
@@ -30,7 +29,7 @@ export const useCreateProject = () => {
 export const useUpdateProject = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<Project> }) => ProjectUseCase.updateProject(id, data),
+        mutationFn: ({ id, data }: { id: string; data: Partial<ProjectInput> }) => ProjectUseCase.updateProject(id, data),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
             queryClient.invalidateQueries({ queryKey: ['project', variables.id] });

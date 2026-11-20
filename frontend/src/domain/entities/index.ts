@@ -21,15 +21,25 @@ export interface Skill {
     deletedAt?: string | null;
 }
 
+export interface ProjectCaseStudy {
+    problem?: string;
+    contribution?: string;
+    decision?: string;
+    outcome?: string;
+}
+
 export interface Project {
     id: string;
     title: string;
     description: string;
-    imageUrl?: string;
+    imageUrl?: string | null;
     skills: SkillRef[];
-    repoUrl?: string;
-    liveUrl?: string;
+    repoUrl?: string | null;
+    liveUrl?: string | null;
     isPublished: boolean;
+    isFeatured?: boolean;
+    hasCaseStudy?: boolean;
+    caseStudy?: ProjectCaseStudy | null;
     deletedAt?: string | null;
 }
 

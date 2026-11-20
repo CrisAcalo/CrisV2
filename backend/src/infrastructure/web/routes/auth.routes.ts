@@ -2,35 +2,17 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { validateRequest } from '../middlewares/validateRequest';
 import { loginSchema, registerSchema } from '../middlewares/validators/auth.validator';
+import { authGuard, requireRole } from '../middlewares/authGuard';
+import { loginRateLimit } from '../middlewares/rateLimits';
+import { loginAccountLimit } from '../middlewares/loginAccountLimit';
 
 const router = Router();
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     User:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         email:
- *           type: string
- *           format: email
- *         role:
- *           type: string
- *           enum: [ADMIN, BASIC]
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- *
- * /api/auth/register:
+ * /api/auth/login:
  *   post:
- *     summary: Register a new user
+ *     summary: Start a revocable session
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -38,79 +20,90 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             required: [email, password]
  *             properties:
  *               email:
  *                 type: string
- *                 example: admin@portfolio.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: S3cr3tP@ssw0rd!
- *               role:
+ *                 format: password
+ *               otp:
  *                 type: string
- *                 enum: [ADMIN, BASIC]
- *                 example: ADMIN
+ *                 description: Six-digit authenticator code when MFA is enabled
  *     responses:
- *       201:
- *         description: User registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *       400:
- *         description: Validation Error or User Exists
+ *       200:
+ *         description: Session token, expiry and user identity
+ *       401:
+ *         description: Invalid credentials or required authenticator verification
+ *       429:
+ *         description: Login attempt limit reached
  */
-router.post('/register', validateRequest(registerSchema), AuthController.register);
+router.post('/login', loginRateLimit, validateRequest(loginSchema), loginAccountLimit, AuthController.login);
 
 /**
  * @swagger
- * /api/auth/login:
- *   post:
- *     summary: Login a user
+ * /api/auth/me:
+ *   get:
+ *     summary: Read the current user identity
  *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User identity
+ *       401:
+ *         description: Invalid session
+ */
+router.get('/me', authGuard, AuthController.me);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Revoke the current session
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Session revoked
+ *       401:
+ *         description: Invalid session
+ */
+router.post('/logout', authGuard, AuthController.logout);
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a user (administrator only)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             required: [email, password]
  *             properties:
  *               email:
  *                 type: string
- *                 example: admin@portfolio.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: S3cr3tP@ssw0rd!
+ *                 format: password
+ *               role:
+ *                 type: string
+ *                 enum: [ADMIN, BASIC]
  *     responses:
- *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 token:
- *                   type: string
- *                 role:
- *                   type: string
- *                   enum: [ADMIN, BASIC]
- *       400:
- *         description: Validation Error
- *       401:
- *         description: Unauthorized
+ *       201:
+ *         description: Registered user identity
+ *       403:
+ *         description: Administrator required
  */
-router.post('/login', validateRequest(loginSchema), AuthController.login);
+router.post('/register', authGuard, requireRole('ADMIN'), validateRequest(registerSchema), AuthController.register);
 
 export default router;

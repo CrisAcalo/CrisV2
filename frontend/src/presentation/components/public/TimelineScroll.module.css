@@ -1,0 +1,405 @@
+.timeline {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.side {
+  display: none;
+  min-width: 0;
+}
+
+.side:has(.yearIndex) {
+  display: block;
+}
+
+.sidePanel {
+  display: grid;
+  gap: .75rem;
+}
+
+.period {
+  display: none;
+}
+
+.yearIndex {
+  display: grid;
+  gap: .65rem;
+  padding-top: .7rem;
+  border-top: 1px solid var(--portfolio-line);
+}
+
+.indexLabel {
+  color: var(--portfolio-ink);
+  font-size: .87rem;
+  font-weight: 650;
+}
+
+.indexGroup {
+  display: grid;
+  align-items: baseline;
+  gap: .15rem .65rem;
+}
+
+.indexGroupLabel {
+  color: var(--portfolio-muted);
+  font-size: .8rem;
+  line-height: 1.4;
+}
+
+.indexGroup[data-current] .indexGroupLabel {
+  color: var(--portfolio-action);
+}
+
+.indexYears {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+
+.indexLink {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  padding-inline: .5rem;
+  border: 1px solid transparent;
+  border-radius: .375rem;
+  color: var(--portfolio-copy);
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.indexMarker {
+  position: absolute;
+  z-index: -1;
+  inset: .26rem .1rem;
+  border: 1px solid color-mix(in srgb, var(--portfolio-action) 48%, var(--portfolio-line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--portfolio-action) 9%, var(--portfolio-input));
+  pointer-events: none;
+  transition: none;
+}
+
+.indexLink:hover {
+  color: var(--portfolio-action);
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+
+.indexLink[aria-current='location'] {
+  color: var(--portfolio-action);
+}
+
+.indexLink:focus-visible {
+  outline: 2px solid var(--portfolio-action);
+  outline-offset: 2px;
+}
+
+.body {
+  --timeline-gutter: clamp(1.3rem, 3.2vw, 2.1rem);
+  position: relative;
+  min-width: 0;
+  padding-inline-start: var(--timeline-gutter);
+}
+
+.body .group {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.body .group + .group {
+  margin-top: clamp(2.75rem, 6vw, 4.5rem);
+}
+
+.body .groupTitle {
+  font-size: clamp(1.3rem, 2.5vw, 1.65rem);
+  letter-spacing: -.025em;
+}
+
+.body .entry {
+  position: relative;
+  isolation: isolate;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .6rem;
+}
+
+.entry::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: .15rem -.45rem;
+  border-radius: .5rem;
+  background: color-mix(in srgb, var(--portfolio-action) 7%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.entry[data-timeline-current]::before {
+  opacity: 1;
+}
+
+.entry[id] {
+  scroll-margin-top: max(6.25rem, calc(42vh - .625rem));
+}
+
+.entryHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .35rem;
+}
+
+.entryIdentity {
+  min-width: 0;
+}
+
+.entryIdentity .entryTitle {
+  font-size: clamp(1.18rem, 1.8vw, 1.4rem);
+  letter-spacing: -.025em;
+}
+
+.date {
+  max-inline-size: 100%;
+}
+
+.entryCopy,
+.entryRemainder {
+  max-width: 65ch;
+  color: var(--portfolio-copy);
+  font-size: .95rem;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.entryDisclosure > summary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: .4rem;
+  color: var(--portfolio-action);
+  font-size: .85rem;
+  font-weight: 650;
+  list-style: none;
+  cursor: pointer;
+}
+
+.entryDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.entryDisclosure > summary:hover {
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+
+.readLess,
+.entryDisclosure[open] .readMore,
+.entryBody:has(.entryDisclosure[open]) .entryEllipsis {
+  display: none;
+}
+
+.entryDisclosure[open] .readLess {
+  display: inline;
+}
+
+.entryDisclosure[open] > summary svg {
+  transform: rotate(180deg);
+}
+
+.entrySkills:global(.portfolio-tech-list) {
+  margin-top: 0;
+}
+
+.track {
+  position: absolute;
+  inset: .4rem auto 0 0;
+  width: .875rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.track::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: calc(50% - .5px);
+  width: 1px;
+  background: var(--portfolio-line);
+}
+
+.track[data-timeline-separated] {
+  --track-gap-start: calc(var(--timeline-break) - .75rem);
+  --track-gap-end: calc(var(--timeline-break) + .75rem);
+  mask-image: linear-gradient(
+    to bottom,
+    #000 var(--track-gap-start),
+    transparent var(--track-gap-start) var(--track-gap-end),
+    #000 var(--track-gap-end)
+  );
+}
+
+.fill {
+  position: absolute;
+  inset-block: 0;
+  left: calc(50% - 1.5px);
+  width: 3px;
+  background: var(--portfolio-action);
+  box-shadow: 0 0 .5rem var(--portfolio-halo);
+  transform-origin: top;
+}
+
+.marker {
+  position: absolute;
+  top: 1.35rem;
+  left: calc(-1 * var(--timeline-gutter));
+  width: .5rem;
+  aspect-ratio: 1;
+  border: 1px solid var(--portfolio-line);
+  border-radius: 50%;
+  background: var(--portfolio-input);
+  transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marker {
+    transition: transform .24s, background-color .24s, border-color .24s;
+  }
+
+  .entry::before {
+    transition: opacity .24s ease-out;
+  }
+
+  .entryDisclosure > summary svg {
+    transition: transform .2s ease-out;
+  }
+
+  .entry[data-timeline-current] .marker {
+    background: var(--portfolio-action);
+    border-color: var(--portfolio-action);
+    box-shadow: 0 0 .65rem var(--portfolio-glow);
+    transform: translateX(-50%) scale(1.65);
+  }
+
+  .entry[data-timeline-current] .marker::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border: 1px solid var(--portfolio-action);
+    border-radius: inherit;
+    animation: marker-pulse .48s ease-out both;
+  }
+}
+
+@keyframes marker-pulse {
+  from { opacity: .75; transform: scale(.8); }
+  to { opacity: 0; transform: scale(2.35); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (interpolate-size: allow-keywords) and selector(::details-content) {
+    .entryDisclosure {
+      interpolate-size: allow-keywords;
+    }
+
+    .entryDisclosure::details-content {
+      height: 0;
+      overflow: clip;
+      transition: height .26s ease-out, content-visibility .26s allow-discrete;
+    }
+
+    .entryDisclosure[open]::details-content {
+      height: auto;
+    }
+  }
+}
+
+@media (560px <= width < 900px) {
+  .indexGroup {
+    grid-template-columns: minmax(5.75rem, max-content) minmax(0, 1fr);
+  }
+}
+
+@media (width >= 900px) {
+  .timeline {
+    --timeline-columns: minmax(10rem, .34fr) minmax(0, 1fr);
+    --timeline-column-gap: clamp(1.5rem, 4vw, 3.5rem);
+  }
+
+  .timeline:has(.yearIndex) {
+    grid-template-columns: var(--timeline-columns);
+    gap: var(--timeline-column-gap);
+  }
+
+  .entryHeader {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .35rem 1.5rem;
+  }
+}
+
+@media (width >= 900px) and (height >= 480px) and (prefers-reduced-motion: no-preference) {
+  .timeline {
+    grid-template-columns: var(--timeline-columns);
+    gap: var(--timeline-column-gap);
+  }
+
+  .side {
+    display: block;
+  }
+
+  .sidePanel {
+    position: sticky;
+    top: max(6.5rem, 27vh);
+    gap: .45rem;
+  }
+
+  .sidePanel:has(.yearIndex) {
+    padding-inline-start: .75rem;
+    border-inline-start: 1px solid var(--portfolio-line);
+  }
+
+  .yearIndex {
+    max-block-size: min(19rem, 42svh);
+    overflow: auto;
+    margin-inline: -.25rem;
+    padding: .15rem .25rem .25rem;
+    border-top: 0;
+  }
+
+  .period {
+    display: block;
+    padding-block: .2rem;
+  }
+
+  .yearFrame {
+    position: relative;
+    height: 1.06em;
+    overflow: clip;
+    color: var(--portfolio-action);
+    font: 600 clamp(4.3rem, 8vw, 7.7rem) / .98 var(--portfolio-display-font), var(--font-inter), sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.05em;
+  }
+
+  .year {
+    position: absolute;
+    inset: 0;
+    transform-origin: left center;
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    display: none;
+  }
+
+  .entryDisclosure > summary svg {
+    transition-property: none;
+  }
+}

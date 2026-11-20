@@ -1,227 +1,168 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Search } from 'lucide-react';
-import { Modal, Input, Button } from '../common';
+import { Check } from 'lucide-react';
+import { Modal } from '../common/Modal';
 import { useCreateSkill, useUpdateSkill, useUpdateSkillRelations } from '../../hooks/useSkills';
 import { useProjects } from '../../hooks/useProjects';
 import { useExperiences, useEducations } from '../../hooks/useHistory';
-import { Skill } from '../../../domain/entities';
+import type { Skill } from '../../../domain/entities';
+import { getApiErrorMessage, getApiStatus } from '../../utils/apiErrors';
+import { AdminFormActions, AdminInput } from './AdminFormFields';
+import { showFormError } from './adminFormValidation';
+import styles from './AdminDialog.module.css';
 
-const skillSchema = z.object({
-    name: z.string().min(1, 'El nombre es obligatorio').max(100, 'Demasiado largo'),
-    isPublic: z.boolean(),
+const schema = z.object({
+  name: z.string().trim().min(1, 'Escribe el nombre de la tecnología').max(100, 'Usa un máximo de 100 caracteres'),
+  isPublic: z.boolean(),
 });
-type SkillFormValues = z.infer<typeof skillSchema>;
+type Values = z.infer<typeof schema>;
 
-// Small reusable searchable multi-select for entities
-function EntitySelector({
-    label,
-    items,
-    selectedIds,
-    onToggle,
-}: {
-    label: string;
-    items: Array<{ id: string; label: string }>;
-    selectedIds: string[];
-    onToggle: (id: string) => void;
+function EntitySelector({ label, items, selection, onChange, loading, failed, onRetry }: {
+  label: string;
+  items: { id: string; label: string }[];
+  selection: string[];
+  onChange: (selection: string[]) => void;
+  loading: boolean;
+  failed: boolean;
+  onRetry: () => void;
 }) {
-    const [q, setQ] = useState('');
-    const filtered = useMemo(() => {
-        const lq = q.toLowerCase();
-        return lq ? items.filter(i => i.label.toLowerCase().includes(lq)) : items;
-    }, [items, q]);
+  const [search, setSearch] = useState('');
+  const titleId = useId();
+  const filtered = items.filter((item) => item.label.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es')));
 
-    return (
-        <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                {label}
-            </label>
-            <div className="relative mb-1">
-                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40" style={{ color: 'var(--text-primary)' }} />
-                <input
-                    type="text"
-                    value={q}
-                    onChange={e => setQ(e.target.value)}
-                    placeholder={`Buscar ${label.toLowerCase()}...`}
-                    className="w-full pl-7 pr-2 py-1.5 text-xs rounded-lg border focus:outline-none"
-                    style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-                />
-            </div>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                {filtered.length === 0 && (
-                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>Sin resultados</p>
-                )}
-                {filtered.map(item => {
-                    const sel = selectedIds.includes(item.id);
-                    return (
-                        <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => onToggle(item.id)}
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${sel ? 'border-[var(--primary)] bg-[var(--primary)] text-white' : 'hover:border-[var(--primary)]'}`}
-                            style={sel ? {} : { borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--surface-raised)' }}
-                        >
-                            {item.label}
-                        </button>
-                    );
-                })}
-            </div>
+  return (
+    <div role="group" aria-labelledby={titleId} className={styles.selector}>
+      <p id={titleId} className={styles.selectorLabel}>{label}</p>
+      {loading ? (
+        <p className={styles.hint} role="status">Cargando opciones…</p>
+      ) : failed ? (
+        <div className={styles.selector}>
+          <p className={styles.error} role="alert">No se pudieron cargar las opciones.</p>
+          <button className={`${styles.action} ${styles.secondary} justify-self-start`} type="button" onClick={onRetry}>Reintentar</button>
         </div>
-    );
+      ) : items.length === 0 ? (
+        <p className={styles.hint}>No hay registros disponibles.</p>
+      ) : (
+        <>
+          <AdminInput
+            label={`Buscar en ${label.toLocaleLowerCase('es')}`}
+            type="search"
+            value={search}
+            hint={selection.length ? `${selection.length} vinculados` : undefined}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.preventDefault();
+            }}
+          />
+          <div className={styles.selectorOptions}>
+            {!filtered.length && <p className={styles.hint}>No hay coincidencias.</p>}
+            {filtered.map((item) => {
+              const selected = selection.includes(item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={selected}
+                  className={styles.choice}
+                  onClick={() => onChange(selected ? selection.filter((id) => id !== item.id) : [...selection, item.id])}
+                >
+                  {selected && <Check size={14} aria-hidden="true" />} {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
-interface SkillFormModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    skillToEdit?: Skill | null;
+type Props = { isOpen: boolean; onClose: () => void; skillToEdit?: Skill | null };
+
+export function SkillFormModal({ isOpen, onClose, skillToEdit }: Props) {
+  if (!isOpen) return null;
+  return <SkillForm key={skillToEdit?.id ?? 'new'} isOpen={isOpen} onClose={onClose} skillToEdit={skillToEdit} />;
 }
 
-export const SkillFormModal: React.FC<SkillFormModalProps> = ({ isOpen, onClose, skillToEdit }) => {
-    const createMutation = useCreateSkill();
-    const updateMutation = useUpdateSkill();
-    const updateRelationsMutation = useUpdateSkillRelations();
+function SkillForm({ isOpen, onClose, skillToEdit }: Props) {
+  const create = useCreateSkill();
+  const update = useUpdateSkill();
+  const updateRelations = useUpdateSkillRelations();
+  const projects = useProjects();
+  const experiences = useExperiences();
+  const educations = useEducations();
+  const [projectIds, setProjectIds] = useState(() => skillToEdit?.projects?.map((item) => item.id) ?? []);
+  const [experienceIds, setExperienceIds] = useState(() => skillToEdit?.experiences?.map((item) => item.id) ?? []);
+  const [educationIds, setEducationIds] = useState(() => skillToEdit?.educations?.map((item) => item.id) ?? []);
+  const [savedId, setSavedId] = useState(skillToEdit?.id);
+  const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: skillToEdit?.name ?? '', isPublic: skillToEdit?.isPublic ?? true },
+  });
 
-    // Entity data for linking
-    const { data: projectsData } = useProjects(false);
-    const { data: experiencesData } = useExperiences(false);
-    const { data: educationsData } = useEducations(false);
+  async function submit(values: Values) {
+    let id = savedId;
+    try {
+      if (id) {
+        await update.mutateAsync({ id, data: values });
+      } else {
+        const { data } = await create.mutateAsync(values);
+        id = data.id;
+        setSavedId(id);
+      }
+    } catch (error) {
+      if (getApiStatus(error) === 409) {
+        setError('name', { message: getApiErrorMessage(error, 'Ya existe una tecnología con ese nombre.') });
+      } else {
+        showFormError(error, schema.shape, setError, 'No se pudo guardar la tecnología.');
+      }
+      return;
+    }
 
-    const projects = projectsData?.data ?? [];
-    const experiences = experiencesData?.data ?? [];
-    const educations = educationsData?.data ?? [];
+    const relations = { projectIds, experienceIds, educationIds };
+    if (id && (skillToEdit || Object.values(relations).some((list) => list.length))) {
+      try {
+        await updateRelations.mutateAsync({ id, data: relations });
+      } catch {
+        setError('root.server', { message: 'La tecnología se guardó, pero sus vínculos siguen pendientes. Guarda los cambios para reintentar.' });
+        return;
+      }
+    }
 
-    // Selected entity IDs for relation linking
-    const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
-    const [selectedExperienceIds, setSelectedExperienceIds] = useState<string[]>([]);
-    const [selectedEducationIds, setSelectedEducationIds] = useState<string[]>([]);
+    toast.success(skillToEdit ? 'Tecnología actualizada' : 'Tecnología creada');
+    onClose();
+  }
 
-    const { register, handleSubmit, reset, setError, formState: { errors } } = useForm<SkillFormValues>({
-        resolver: zodResolver(skillSchema) as any,
-        defaultValues: { name: '', isPublic: true },
-    });
-
-    useEffect(() => {
-        if (skillToEdit) {
-            reset({ name: skillToEdit.name, isPublic: skillToEdit.isPublic });
-            setSelectedProjectIds(skillToEdit.projects?.map(p => p.id) ?? []);
-            setSelectedExperienceIds(skillToEdit.experiences?.map(e => e.id) ?? []);
-            setSelectedEducationIds(skillToEdit.educations?.map(e => e.id) ?? []);
-        } else {
-            reset({ name: '', isPublic: true });
-            setSelectedProjectIds([]);
-            setSelectedExperienceIds([]);
-            setSelectedEducationIds([]);
-        }
-    }, [skillToEdit, reset, isOpen]);
-
-    const toggleProject = (id: string) =>
-        setSelectedProjectIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    const toggleExperience = (id: string) =>
-        setSelectedExperienceIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    const toggleEducation = (id: string) =>
-        setSelectedEducationIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-
-    const onSubmit = async (values: SkillFormValues) => {
-        try {
-            let skillId: string;
-            if (skillToEdit) {
-                const res = await updateMutation.mutateAsync({ id: skillToEdit.id, data: values });
-                skillId = res.data.id;
-                toast.success('Skill actualizada');
-            } else {
-                const res = await createMutation.mutateAsync(values);
-                skillId = res.data.id;
-                toast.success('Skill creada');
-            }
-
-            // Always save relations (for both create and update)
-            await updateRelationsMutation.mutateAsync({
-                id: skillId,
-                data: {
-                    projectIds: selectedProjectIds,
-                    experienceIds: selectedExperienceIds,
-                    educationIds: selectedEducationIds,
-                },
-            });
-
-            onClose();
-        } catch (err: any) {
-            const apiErrors = err?.response?.data?.errors;
-            const message = err?.response?.data?.message;
-            const status = err?.response?.status;
-            if (apiErrors && Array.isArray(apiErrors)) {
-                apiErrors.forEach((e: { field: string; message: string }) =>
-                    setError(e.field as keyof SkillFormValues, { message: e.message })
-                );
-            } else if (status === 409) {
-                setError('name', { message: message || 'Ya existe una skill con ese nombre' });
-            } else {
-                toast.error(message || 'Error al guardar la skill');
-            }
-        }
-    };
-
-    const isPending = createMutation.isPending || updateMutation.isPending || updateRelationsMutation.isPending;
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title={skillToEdit ? 'Editar Skill' : 'Nueva Skill'}>
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-                {/* Basic info */}
-                <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                        Nombre <span className="text-red-400">*</span>
-                    </label>
-                    <Input {...register('name')} placeholder="Ej: Next.js, React Native..." />
-                    {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
-                </div>
-
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="checkbox" {...register('isPublic')} className="w-4 h-4 accent-[var(--primary)]" />
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        Visible en el portafolio público
-                    </span>
-                </label>
-
-                {/* Entity linking */}
-                <div className="border rounded-xl p-4 flex flex-col gap-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-                    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Vincular con entidades</p>
-
-                    <EntitySelector
-                        label="Proyectos"
-                        items={projects.map(p => ({ id: p.id, label: p.title }))}
-                        selectedIds={selectedProjectIds}
-                        onToggle={toggleProject}
-                    />
-
-                    <EntitySelector
-                        label="Experiencias"
-                        items={experiences.map(e => ({ id: e.id, label: `${e.role} — ${e.company}` }))}
-                        selectedIds={selectedExperienceIds}
-                        onToggle={toggleExperience}
-                    />
-
-                    <EntitySelector
-                        label="Educación"
-                        items={educations.map(e => ({ id: e.id, label: `${e.degree} — ${e.institution}` }))}
-                        selectedIds={selectedEducationIds}
-                        onToggle={toggleEducation}
-                    />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                    <Button type="button" variant="secondary-light" onClick={onClose} disabled={isPending}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" variant="primary" disabled={isPending}>
-                        {isPending ? 'Guardando...' : skillToEdit ? 'Actualizar' : 'Crear'}
-                    </Button>
-                </div>
-            </form>
-        </Modal>
-    );
-};
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} busy={isSubmitting} title={savedId ? 'Editar tecnología' : 'Nueva tecnología'} size="lg">
+      <form noValidate className={styles.form} onSubmit={handleSubmit(submit)}>
+        <fieldset className={styles.fieldset} disabled={isSubmitting}>
+          <AdminInput label="Nombre" required autofocus maxLength={100} {...register('name')} error={errors.name?.message} />
+          <label className={styles.check}><input type="checkbox" {...register('isPublic')} /> Mostrar en el portafolio</label>
+        </fieldset>
+        <fieldset className={styles.fieldset} disabled={isSubmitting}>
+          <legend className={styles.selectorLabel}>Vínculos en el portafolio</legend>
+          <EntitySelector label="Proyectos"
+            items={(projects.data?.data ?? []).map((item) => ({ id: item.id, label: item.title }))}
+            selection={projectIds} onChange={setProjectIds} loading={projects.isLoading} failed={projects.isError}
+            onRetry={() => void projects.refetch()} />
+          <EntitySelector label="Experiencia"
+            items={(experiences.data?.data ?? []).map((item) => ({ id: item.id, label: `${item.role} · ${item.company}` }))}
+            selection={experienceIds} onChange={setExperienceIds} loading={experiences.isLoading} failed={experiences.isError}
+            onRetry={() => void experiences.refetch()} />
+          <EntitySelector label="Formación"
+            items={(educations.data?.data ?? []).map((item) => ({ id: item.id, label: `${item.degree} · ${item.institution}` }))}
+            selection={educationIds} onChange={setEducationIds} loading={educations.isLoading} failed={educations.isError}
+            onRetry={() => void educations.refetch()} />
+        </fieldset>
+        {errors.root?.server?.message && <p role="alert" className={styles.notice}>{errors.root.server.message}</p>}
+        <AdminFormActions busy={isSubmitting} onClose={onClose} submitLabel={savedId ? 'Guardar cambios' : 'Crear tecnología'} />
+      </form>
+    </Modal>
+  );
+}

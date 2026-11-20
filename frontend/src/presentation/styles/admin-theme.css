@@ -1,0 +1,63 @@
+:is(.admin-shell, .login-shell) {
+  --admin-bg: #f1f7fb;
+  --admin-surface: #fff;
+  --admin-subtle: #e7eef5;
+  --admin-border: #b9cbd6;
+  --admin-control-border: #748a98;
+  --admin-ink: #0a1a24;
+  --admin-copy: #345165;
+  --admin-muted: #476578;
+  --admin-accent: #00616d;
+  --admin-accent-strong: #004a58;
+  --admin-on-accent: #fff;
+  --admin-soft-accent: #dff2f5;
+  --admin-danger: #a32640;
+  --admin-soft-danger: #fcebf0;
+  --admin-success: #14644d;
+  --admin-soft-success: #e2f4ec;
+
+  --bg: var(--admin-bg);
+  --surface: var(--admin-surface);
+  --surface-raised: var(--admin-subtle);
+  --surface-border: var(--admin-border);
+  --text-primary: var(--admin-ink);
+  --text-secondary: var(--admin-copy);
+  --text-muted: var(--admin-muted);
+  --accent: var(--admin-accent);
+  --accent-hover: var(--admin-accent-strong);
+  --accent-faint: var(--admin-soft-accent);
+  --accent-glow: transparent;
+  --neon-glow: none;
+  --shadow-card: none;
+  --shadow-raised: none;
+
+  min-height: 100dvh;
+  background: var(--admin-bg);
+  color: var(--admin-ink);
+  color-scheme: light;
+}
+
+.dark :is(.admin-shell, .login-shell) {
+  --admin-bg: #0a1a24;
+  --admin-surface: #102531;
+  --admin-subtle: #142b37;
+  --admin-border: #335362;
+  --admin-control-border: #66869a;
+  --admin-ink: #e7eef5;
+  --admin-copy: #d0deeb;
+  --admin-muted: #98a6b4;
+  --admin-accent: #68f1f7;
+  --admin-accent-strong: #a3f9fc;
+  --admin-on-accent: #0a1a24;
+  --admin-soft-accent: #143642;
+  --admin-danger: #ffadc0;
+  --admin-soft-danger: #3a2434;
+  --admin-success: #8cdec1;
+  --admin-soft-success: #1e3936;
+  color-scheme: dark;
+}
+
+:is(.admin-shell, .login-shell) :where(a, button, input, textarea, select, [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 3px;
+}

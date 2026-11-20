@@ -16,6 +16,15 @@ export interface User {
 export interface SkillRef {
     id: string;
     name: string;
+    isPublic?: boolean;
+    deletedAt?: Date | null;
+}
+
+export interface ProjectCaseStudy {
+    problem?: string;
+    contribution?: string;
+    decision?: string;
+    outcome?: string;
 }
 
 export interface Project {
@@ -26,6 +35,8 @@ export interface Project {
     repoUrl?: string | null;
     liveUrl?: string | null;
     isPublished: boolean;
+    isFeatured: boolean;
+    caseStudy?: ProjectCaseStudy | null;
     skills?: SkillRef[];
     createdAt?: Date;
     updatedAt?: Date;
@@ -66,11 +77,11 @@ export interface Skill {
     isFromLinkedIn: boolean;
     isPublic: boolean;
     /** Experiences this skill is connected to */
-    experiences?: Array<{ id: string; role: string; company: string }>;
+    experiences?: Array<{ id: string; role: string; company: string; deletedAt?: Date | null }>;
     /** Education records this skill is connected to */
-    educations?: Array<{ id: string; institution: string; degree: string }>;
+    educations?: Array<{ id: string; institution: string; degree: string; deletedAt?: Date | null }>;
     /** Projects this skill is connected to */
-    projects?: Array<{ id: string; title: string }>;
+    projects?: Array<{ id: string; title: string; isPublished?: boolean; deletedAt?: Date | null }>;
     createdAt?: Date;
     updatedAt?: Date;
     deletedAt?: Date | null;

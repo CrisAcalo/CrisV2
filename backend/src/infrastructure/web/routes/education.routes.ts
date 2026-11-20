@@ -4,7 +4,7 @@ import { EducationUseCases } from '../../../application/use-cases/EducationUseCa
 import { PrismaEducationRepository } from '../../database/prisma/PrismaEducationRepository';
 import { validateRequest } from '../middlewares/validateRequest';
 import { createEducationSchema, updateEducationSchema, getEducationByIdSchema, deleteEducationSchema } from '../middlewares/validators/education.validator';
-import { authGuard, requireRole } from '../middlewares/authGuard';
+import { authGuard, optionalAuth, requireAdminForDeleted, requireRole } from '../middlewares/authGuard';
 
 const router = Router();
 
@@ -57,7 +57,7 @@ const educationController = new EducationController(educationUseCases);
  *               items:
  *                 $ref: '#/components/schemas/Education'
  */
-router.get('/', educationController.getAllEducations);
+router.get('/', optionalAuth, requireAdminForDeleted, educationController.getAllEducations);
 
 /**
  * @swagger
@@ -81,7 +81,7 @@ router.get('/', educationController.getAllEducations);
  *       404:
  *         description: Education not found
  */
-router.get('/:id', validateRequest(getEducationByIdSchema), educationController.getEducationById);
+router.get('/:id', optionalAuth, validateRequest(getEducationByIdSchema), educationController.getEducationById);
 
 // Protected Routes (Admin Only)
 const requireAdmin = requireRole('ADMIN');

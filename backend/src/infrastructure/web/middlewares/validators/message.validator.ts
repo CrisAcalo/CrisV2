@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 export const createMessageSchema = z.object({
     body: z.object({
-        senderName: z.string().min(1, 'El nombre es obligatorio'),
-        senderEmail: z.string().email('Correo electrónico no válido'),
-        subject: z.string().min(5, 'El asunto debe tener al menos 5 caracteres'),
-        content: z.string().min(10, 'El mensaje debe tener al menos 10 caracteres')
+        senderName: z.string().trim().min(1, 'El nombre es obligatorio').max(100),
+        senderEmail: z.string().trim().email('Correo electrónico no válido').max(254),
+        subject: z.string().trim().min(5, 'El asunto debe tener al menos 5 caracteres').max(200),
+        content: z.string().trim().min(10, 'El mensaje debe tener al menos 10 caracteres').max(1000)
     })
 });
 

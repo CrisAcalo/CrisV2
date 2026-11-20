@@ -2,28 +2,44 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '../../../application/stores/useAuthStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { adminSessionExpiredEvent } from '../../../infrastructure/api/axiosClient';
+import { adminSessionKey, replaceAdminSession, sessionChannelName } from '../../hooks/useAdminSession';
 
-/**
- * Listens for 'auth:unauthorized' events dispatched by the Axios response
- * interceptor when a 401 or 403 is returned from the API.
- * On detection: clears auth state and redirects to /login.
- *
- * Mount this once at the root Providers level so it's active globally.
- */
 export const AuthWatcher = () => {
-  const { logout, token } = useAuthStore();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const handleUnauthorized = () => {
-      logout();
-      router.replace('/login');
-    };
+    try {
+      // Remove credentials left by versions that persisted the session in the browser.
+      window.localStorage.removeItem('token');
+      window.localStorage.removeItem('auth-storage');
+    } catch {
+      // Storage may be disabled by the browser.
+    }
 
-    window.addEventListener('auth:unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
-  }, [logout, router]);
+    function closeSession() {
+      replaceAdminSession(queryClient, null);
+      if (window.location.pathname.startsWith('/admin')) router.replace('/login');
+    }
+
+    window.addEventListener(adminSessionExpiredEvent, closeSession);
+    const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(sessionChannelName);
+    if (channel) {
+      channel.onmessage = (event) => {
+        if (event.data === 'closed') closeSession();
+        if (event.data === 'changed') {
+          queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== adminSessionKey[0] });
+          void queryClient.invalidateQueries({ queryKey: adminSessionKey });
+        }
+      };
+    }
+    return () => {
+      window.removeEventListener(adminSessionExpiredEvent, closeSession);
+      channel?.close();
+    };
+  }, [queryClient, router]);
 
   return null;
 };

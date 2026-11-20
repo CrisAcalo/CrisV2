@@ -1,0 +1,123 @@
+.catalogue {
+  position: relative;
+  border-bottom: 1px solid var(--portfolio-line);
+}
+
+.groupTitle {
+  color: var(--portfolio-ink);
+  font: 600 clamp(1.6rem, 2.7vw, 2.1rem) / 1.02 var(--portfolio-display-font), var(--font-inter), sans-serif;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: .35rem clamp(.55rem, 2vw, 1.75rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item,
+.itemText {
+  min-width: 0;
+}
+
+.itemRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 3.45rem;
+  gap: .62rem;
+  padding: .3rem .25rem;
+}
+
+.iconFrame {
+  display: grid;
+  place-items: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--portfolio-line) 80%, transparent);
+  border-radius: .45rem;
+  background: color-mix(in srgb, var(--portfolio-aurora-blue) 9%, var(--surface-raised));
+  color: var(--portfolio-action);
+}
+
+.itemText {
+  display: grid;
+  gap: .16rem;
+  overflow-wrap: anywhere;
+}
+
+.name {
+  font-size: .93rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.projectCount {
+  color: var(--portfolio-muted);
+  font-size: .75rem;
+  line-height: 1.2;
+}
+
+.details > summary {
+  grid-template-columns: auto minmax(0, max-content) auto;
+  justify-content: start;
+  border-radius: .45rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.details > summary:is(:hover, :focus-visible),
+.details[open] > summary {
+  background: color-mix(in srgb, var(--portfolio-action) 8%, transparent);
+  color: var(--portfolio-action);
+}
+
+.details[open] .chevron {
+  rotate: 180deg;
+}
+
+.projectList {
+  margin: .3rem 0 .25rem 1.45rem;
+  padding-inline-start: .8rem;
+  border-inline-start: 1px solid var(--portfolio-line);
+  list-style: none;
+}
+
+.projectList .projectLink {
+  min-height: 2.75rem;
+  gap: .35rem;
+  font-size: .82rem;
+  line-height: 1.3;
+}
+
+.projectLink > svg {
+  flex-shrink: 0;
+}
+
+@media (min-width: 23rem) {
+  .list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 42rem) {
+  .list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .groupTitle {
+    padding-block-start: .85rem;
+  }
+}

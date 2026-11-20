@@ -27,6 +27,8 @@ const messageController = new MessageController(messageUseCases);
  *         senderEmail:
  *           type: string
  *           format: email
+ *         subject:
+ *           type: string
  *         content:
  *           type: string
  *         isRead:
@@ -56,6 +58,7 @@ const messageController = new MessageController(messageUseCases);
  *             required:
  *               - senderName
  *               - senderEmail
+ *               - subject
  *               - content
  *             properties:
  *               senderName:
@@ -63,11 +66,26 @@ const messageController = new MessageController(messageUseCases);
  *               senderEmail:
  *                 type: string
  *                 format: email
+ *               subject:
+ *                 type: string
  *               content:
  *                 type: string
  *     responses:
  *       201:
- *         description: Message sent successfully
+ *         description: Message saved with its email notification status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   $ref: '#/components/schemas/Message'
+ *                 notification:
+ *                   type: string
+ *                   enum: [accepted, failed, disabled]
  *       400:
  *         description: Validation Error
  */

@@ -1,0 +1,13 @@
+.reveal {
+  --reveal-progress: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    --reveal-progress: var(--section-scroll-progress, 1);
+  }
+
+  .reveal:focus-within {
+    --reveal-progress: 1;
+  }
+}

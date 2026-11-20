@@ -6,12 +6,14 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export const envSchema = z.object({
     PORT: z.string().default('4000'),
+    CRISV2_DEV_HOST: z.string().optional(),
     DATABASE_URL: z.string().url(),
-    JWT_SECRET: z.string().min(10),
-    JWT_EXPIRES_IN: z.string().default('1d'),
+    AUTH_SESSION_TTL_MINUTES: z.coerce.number().int().min(5).max(720).default(30),
+    ADMIN_MFA_REQUIRED: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
+    ADMIN_MFA_SECRETS: z.string().optional(),
     LINKEDIN_API_TOKEN: z.string().optional(),
-    MAIL_USER: z.string().email().optional(),
-    MAIL_PASS: z.string().optional(),
+    RESEND_API_KEY: z.string().trim().min(1).optional(),
+    RESEND_FROM: z.string().trim().email().optional(),
     MAIL_TO: z.string().email().optional(),
 });
 

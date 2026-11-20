@@ -1,122 +1,149 @@
-'use client';
+import { ChevronDown } from 'lucide-react';
+import type { Education, Experience, SkillRef } from '../../../domain/entities';
+import { formatFriendlyDate } from '../../utils/dateUtils';
+import { TechnologyIcon } from './TechnologyIcon';
+import { TimelineScroll } from './TimelineScroll';
+import styles from './TimelineScroll.module.css';
 
-import { motion } from 'framer-motion';
-import { Briefcase, GraduationCap, Calendar } from 'lucide-react';
-import { SectionHeading, GlassCard } from '../common';
-import { Experience, Education } from '../../../domain/entities';
-import { formatFriendlyDate } from '../../../presentation/utils/dateUtils';
+type TimelineEntry = {
+  id: string;
+  title: string;
+  organization: string;
+  startDate: string;
+  endDate?: string | null;
+  description?: string | null;
+  skills?: SkillRef[];
+  anchorId?: string;
+};
 
-export interface TimelineSectionProps {
-  experiences: Experience[];
-  educations: Education[];
+const sentenceSegmenter = new Intl.Segmenter('es', { granularity: 'sentence' });
+const excerptLimit = 280;
+
+function splitDescription(text: string) {
+  if (text.length <= 320) return { excerpt: text, remainder: '' };
+
+  const preview = text.slice(0, excerptLimit);
+  let naturalEnd = preview.lastIndexOf('\n');
+  for (const { index, segment } of sentenceSegmenter.segment(text)) {
+    const end = index + segment.trimEnd().length;
+    if (end > excerptLimit) break;
+    naturalEnd = Math.max(naturalEnd, end);
+  }
+
+  const wordEnd = preview.match(/\s+\S*$/u)?.index ?? 0;
+  let cutoff = /[\uD800-\uDBFF]$/u.test(preview) ? excerptLimit - 1 : excerptLimit;
+  if (naturalEnd >= 90) cutoff = naturalEnd;
+  else if (wordEnd >= 200) cutoff = wordEnd;
+
+  return { excerpt: text.slice(0, cutoff).trimEnd(), remainder: text.slice(cutoff).trimStart() };
 }
 
-export const TimelineSection = ({ experiences, educations }: TimelineSectionProps) => {
+function TimelineDescription({ description, title }: { description: string; title: string }) {
+  const { excerpt, remainder } = splitDescription(description);
+
   return (
-    <section id="experiencia" className="relative py-24 overflow-hidden">
+    <div className={styles.entryBody}>
+      <p className={styles.entryCopy}>
+        {excerpt}
+        {remainder && !/[.!?…]$/u.test(excerpt) && <span className={styles.entryEllipsis} aria-hidden="true">…</span>}
+      </p>
+      {remainder && (
+        <details className={styles.entryDisclosure}>
+          <summary>
+            <span className={styles.readMore}>Leer más</span>
+            <span className={styles.readLess}>Leer menos</span>
+            <span className="sr-only"> sobre {title}</span>
+            <ChevronDown size={16} aria-hidden="true" />
+          </summary>
+          <p className={styles.entryRemainder}>{remainder}</p>
+        </details>
+      )}
+    </div>
+  );
+}
 
-      <div className="max-w-4xl mx-auto px-6 relative z-10">
-        <SectionHeading
-          title="Trayectoria"
-          subtitle="Mi recorrido profesional y académico en el mundo del desarrollo de software."
-        />
+function TimelineGroup({ title, entries, separated }: { title: string; entries: TimelineEntry[]; separated: boolean }) {
+  return (
+    <div className={`portfolio-timeline-group ${styles.group}`} data-timeline-divider={separated || undefined}>
+      <h3 className={styles.groupTitle}>{title}</h3>
+      <ul className="portfolio-entries">
+        {entries.map((entry) => {
+          const description = entry.description?.trim();
+          return (
+            <li
+              className={`portfolio-timeline-entry ${styles.entry}`}
+              key={entry.id}
+              id={entry.anchorId}
+              tabIndex={entry.anchorId ? -1 : undefined}
+              data-timeline-entry
+            >
+              <span className={styles.marker} aria-hidden="true" data-timeline-marker />
+              <header className={styles.entryHeader}>
+                <div className={styles.entryIdentity}>
+                  <h4 className={styles.entryTitle}>{entry.title}</h4>
+                  <p className="portfolio-organization">{entry.organization}</p>
+                </div>
+                <p className={`portfolio-date ${styles.date}`}>
+                  {formatFriendlyDate(entry.startDate, 'UTC')} – {formatFriendlyDate(entry.endDate, 'UTC')}
+                </p>
+              </header>
+              {description && <TimelineDescription description={description} title={entry.title} />}
+              {!!entry.skills?.length && (
+                <ul className={`portfolio-tech-list ${styles.entrySkills}`} aria-label="Tecnologías">
+                  {entry.skills.map((skill) => (
+                    <li key={skill.id}><TechnologyIcon name={skill.name} size={16} />{skill.name}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
-        <div className="mt-16 space-y-24">
+export function TimelineSection({ experiences, educations }: { experiences: Experience[]; educations: Education[] }) {
+  const groups = [
+    {
+      id: 'experiencia',
+      title: 'Experiencia',
+      entries: experiences.map((entry) => ({ ...entry, title: entry.role, organization: entry.company })),
+    },
+    {
+      id: 'educacion',
+      title: 'Educación',
+      entries: educations.map((entry) => ({ ...entry, title: entry.degree, organization: entry.institution })),
+    },
+  ].filter((group) => group.entries.length > 0);
 
-          {/* Experience Timeline */}
-          <div>
-            <div className="flex items-center gap-4 mb-10">
-              <div className="p-3 rounded-xl bg-[var(--accent)] text-white glow-accent">
-                <Briefcase size={24} />
-              </div>
-              <h3 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Experiencia</h3>
-            </div>
+  if (!groups.length) return null;
 
-            <div className="relative border-l-2 border-[var(--surface-border)] ml-6 space-y-12">
-              {experiences.map((exp, index) => (
-                <motion.div
-                  key={exp.id}
-                  initial={{ opacity: 0, x: -50 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="relative pl-8"
-                >
-                  <div className="absolute -left-[9px] top-6 w-4 h-4 rounded-full bg-[var(--accent)] glow-accent border-2 border-[var(--bg)]" />
+  const indexedGroups = groups.map(({ id, title, entries }) => {
+    const years = new Map<string, string>();
+    const indexedEntries = entries.map((entry) => {
+      const startYear = new Date(entry.startDate).getUTCFullYear();
+      const year = Number.isFinite(startYear) ? String(startYear) : null;
+      const target = year ? `trayectoria-${id}-${year}` : undefined;
+      const anchorId = year && !years.has(year) ? target : undefined;
+      if (year && anchorId) years.set(year, anchorId);
+      return { ...entry, year, target, anchorId };
+    });
+    return { title, entries: indexedEntries, years: Array.from(years, ([year, anchor]) => ({ year, anchor })) };
+  });
+  const periods = indexedGroups.flatMap(({ title, entries }) => entries.map(({ year, target }) => ({ group: title, year, target })));
+  const yearGroups = indexedGroups.filter(({ years }) => years.length).map(({ title, years }) => ({ title, years }));
 
-                  <GlassCard className="hover:border-[var(--accent)] transition-colors duration-300">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
-                      <div>
-                        <h4 className="text-xl font-bold text-[var(--accent)]">{exp.role}</h4>
-                        <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>{exp.company}</p>
-                      </div>
-                      <div className="transition-all duration-250 ease-in-out flex items-center gap-2 text-sm font-medium px-3 py-1 rounded-full bg-[var(--surface-raised)] border border-[var(--surface-border)] w-fit" style={{ color: 'var(--text-secondary)' }}>
-                        <Calendar size={14} />
-                        <span>{formatFriendlyDate(exp.startDate)} — {formatFriendlyDate(exp.endDate)}</span>
-                      </div>
-                    </div>
-
-                    {exp.description && (
-                      <p className="mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                        {exp.description}
-                      </p>
-                    )}
-
-                    {exp.skills && exp.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {exp.skills.map(skill => (
-                          <span key={skill.id} className="px-2 py-1 text-xs rounded bg-[var(--surface-raised)] text-[var(--text-secondary)] border border-[var(--surface-border)]">
-                            {skill.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </GlassCard>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Education Timeline */}
-          <div>
-            <div className="flex items-center gap-4 mb-10">
-              <div className="p-3 rounded-xl bg-[var(--accent)] text-white glow-accent">
-                <GraduationCap size={24} />
-              </div>
-              <h3 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Educación</h3>
-            </div>
-
-            <div className="relative border-l-2 border-[var(--surface-border)] ml-6 space-y-12">
-              {educations.map((edu, index) => (
-                <motion.div
-                  key={edu.id}
-                  initial={{ opacity: 0, x: -50 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="relative pl-8"
-                >
-                  <div className="absolute -left-[9px] top-6 w-4 h-4 rounded-full bg-[var(--surface-border)] border-2 border-[var(--bg)]" />
-
-                  <GlassCard>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      <div>
-                        <h4 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{edu.degree}</h4>
-                        <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>{edu.institution}</p>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm font-medium px-3 py-1 rounded-full bg-[var(--surface-raised)] border border-[var(--surface-border)] w-fit" style={{ color: 'var(--text-secondary)' }}>
-                        <Calendar size={14} />
-                        <span>{formatFriendlyDate(edu.startDate)} — {formatFriendlyDate(edu.endDate)}</span>
-                      </div>
-                    </div>
-                  </GlassCard>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-        </div>
+  return (
+    <section id="experiencia" className="portfolio-section" aria-labelledby="timeline-title" tabIndex={-1}>
+      <div className="portfolio-shell portfolio-section-inner">
+        <h2 id="timeline-title" className="portfolio-heading">Trayectoria</h2>
+        <TimelineScroll periods={periods} yearGroups={yearGroups}>
+          {indexedGroups.map(({ title, entries }, index) => (
+            <TimelineGroup key={title} title={title} entries={entries} separated={index > 0} />
+          ))}
+        </TimelineScroll>
       </div>
     </section>
   );
-};
+}

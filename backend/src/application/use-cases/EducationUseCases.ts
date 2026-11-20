@@ -2,7 +2,7 @@ import { IEducationRepository } from '../../domain/repositories/IEducationReposi
 import { NotFoundError } from '../../domain/errors/AppError';
 import { Education } from '../../domain/entities';
 
-export type CreateEducationDTO = Omit<Education, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
+export type CreateEducationDTO = Omit<Education, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'skills'> & { skillIds?: string[] };
 export type UpdateEducationDTO = Partial<CreateEducationDTO>;
 
 export class EducationUseCases {

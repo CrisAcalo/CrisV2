@@ -1,89 +1,91 @@
-'use client';
+import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
+import type { Project } from '../../../domain/entities';
+import { getPublicProject } from '../../../infrastructure/api/publicApi';
+import { projectPath } from '../../utils/projectPath';
+import { canOptimizeProjectImage } from '../../utils/projectImageOptimization';
+import { publicHttpUrl } from '../../utils/publicHttpUrl';
+import { ProjectPreview } from './ProjectPreview';
+import { ProjectShowcase } from './ProjectShowcase';
+import { getProjectChapters, ProjectLinks, ProjectTechnologies } from './ProjectContent';
+import styles from './ProjectsSection.module.css';
 
-import { motion } from 'framer-motion';
-import { ExternalLink, Github, FolderGit2 } from 'lucide-react';
-import { SectionHeading, GlassCard } from '../common';
-import { Project } from '../../../domain/entities';
+export async function ProjectsSection({ projects }: { projects: Project[] }) {
+  const published = projects.filter((project) => project.isPublished && !project.deletedAt);
+  const featured = published.find((project) => project.isFeatured);
+  const ordered = featured ? [featured, ...published.filter((project) => project.id !== featured.id)] : published;
+  if (!ordered.length) return null;
 
-export interface ProjectsSectionProps {
-  projects: Project[];
-}
-
-export const ProjectsSection = ({ projects }: ProjectsSectionProps) => {
-  return (
-    <section id="proyectos" className="relative py-24 overflow-hidden">
-
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
-        <SectionHeading
-          title="Proyectos Destacados"
-          subtitle="Una selección de aplicaciones construidas con arquitecturas limpias y patrones escalables."
-        />
-
-        {/* Bento Grid Layout */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-          {projects.map((project, index) => {
-            // Make the first project take up 2 columns on large screens to break the monotony
-            const isFeatured = index === 0;
-
-            return (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`${isFeatured ? 'md:col-span-2 lg:col-span-2' : ''}`}
-              >
-                {/* Notice the 'neon={isFeatured}' usage to highlight the main project */}
-                <GlassCard neon={isFeatured} className="h-full flex flex-col justify-between group">
-
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="p-3 rounded-xl bg-[var(--accent-faint)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white transition-colors glow-accent">
-                        <FolderGit2 size={24} />
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {project.repoUrl && (
-                          <a href={project.repoUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-                            <Github size={20} />
-                          </a>
-                        )}
-                        {project.liveUrl && (
-                          <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors">
-                            <ExternalLink size={20} />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    <h3 className={`font-bold mb-3 tracking-tight ${isFeatured ? 'text-2xl md:text-3xl lg:text-4xl text-[var(--accent)] glow-accent-text' : 'text-xl md:text-2xl text-[var(--text-primary)]'}`}>
-                      {project.title}
-                    </h3>
-
-                    <p className={`leading-relaxed mb-6 ${isFeatured ? 'text-lg text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
-                      {project.description}
-                    </p>
-                  </div>
-
-                  {project.skills && project.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-auto pt-6 border-t border-[var(--surface-border)]">
-                      {project.skills.map(skill => (
-                        <span key={skill.id} className="px-3 py-1 text-xs font-semibold rounded bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--surface-border)] group-hover:border-[var(--accent)] transition-colors">
-                          {skill.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                </GlassCard>
-              </motion.div>
-            );
-          })}
-
-        </div>
-      </div >
-    </section >
+  const entries = ordered.map((project) => ({
+    project,
+    imageUrl: publicHttpUrl(project.imageUrl),
+    chapters: getProjectChapters(project.caseStudy, `proyecto-${project.id}-caso`),
+  }));
+  const candidate = entries.find(({ project, imageUrl, chapters }) =>
+    imageUrl && (chapters.length > 1 || (project.caseStudy === undefined && project.hasCaseStudy)),
   );
-};
+  // The public list carries a flag, while the detail endpoint supplies the chapters.
+  const detail = candidate && !candidate.chapters.length
+    ? await getPublicProject(candidate.project.id).catch(() => null)
+    : null;
+  const showcaseChapters = detail
+    ? getProjectChapters(detail.caseStudy, `proyecto-${detail.id}-caso`)
+    : candidate?.chapters ?? [];
+  const showcaseImage = detail ? publicHttpUrl(detail.imageUrl) : candidate?.imageUrl;
+  const showcaseId = showcaseImage && showcaseChapters.length > 1 ? candidate?.project.id : undefined;
+
+  return (
+    <section id="proyectos" className="portfolio-section" aria-labelledby="projects-title" tabIndex={-1}>
+      <div className="portfolio-shell portfolio-section-inner">
+        <h2 id="projects-title" className="portfolio-heading">Proyectos</h2>
+        {entries.map(({ project, imageUrl }) => {
+          const isFeatured = project.id === featured?.id;
+          const hasShowcase = project.id === showcaseId;
+
+          return (
+            <article
+              key={project.id}
+              id={`proyecto-${project.id}`}
+              className={`portfolio-project ${styles.article}${hasShowcase ? ` ${styles.showcased}` : ''}`}
+              tabIndex={-1}
+              data-project-featured={isFeatured || undefined}
+            >
+              <header className="portfolio-project-header">
+                {isFeatured && <p className={styles.featured}>Proyecto destacado</p>}
+                <h3>{project.title}</h3>
+                <div className="portfolio-actions">
+                  <Link href={projectPath(project.id)} prefetch={false} className="portfolio-link" aria-label={`Ver proyecto: ${project.title}`}>
+                    Ver proyecto <ArrowUpRight size={17} aria-hidden="true" />
+                  </Link>
+                  <ProjectLinks project={project} />
+                </div>
+              </header>
+              <div className="portfolio-project-details">
+                {project.description?.trim() && <p>{project.description}</p>}
+                <ProjectTechnologies skills={project.skills} />
+              </div>
+              {hasShowcase ? (
+                <ProjectShowcase
+                  key={showcaseImage}
+                  imageUrl={showcaseImage}
+                  chapters={showcaseChapters}
+                  title={project.title}
+                  headingLevel="h4"
+                  compact
+                />
+              ) : imageUrl && (
+                <ProjectPreview
+                  key={imageUrl}
+                  src={imageUrl}
+                  title={project.title}
+                  optimized={canOptimizeProjectImage(imageUrl)}
+                  sizes="(min-width: 1240px) 38rem, (min-width: 900px) 51vw, 92vw"
+                />
+              )}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

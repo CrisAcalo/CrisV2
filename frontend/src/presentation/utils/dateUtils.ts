@@ -1,4 +1,4 @@
-export const formatFriendlyDate = (dateStr: string | null | undefined): string => {
+export const formatFriendlyDate = (dateStr: string | null | undefined, timeZone?: 'UTC'): string => {
   if (!dateStr) return 'Presente';
 
   try {
@@ -6,7 +6,9 @@ export const formatFriendlyDate = (dateStr: string | null | undefined): string =
     let dateObj: Date;
     if (dateStr.length === 7 && dateStr.includes('-')) {
       const [year, month] = dateStr.split('-');
-      dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
+      dateObj = timeZone
+        ? new Date(Date.UTC(Number(year), Number(month) - 1, 1))
+        : new Date(Number(year), Number(month) - 1, 1);
     } else {
       dateObj = new Date(dateStr);
     }
@@ -17,14 +19,15 @@ export const formatFriendlyDate = (dateStr: string | null | undefined): string =
 
     const formatter = new Intl.DateTimeFormat('es-ES', {
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone,
     });
 
     const formatted = formatter.format(dateObj);
     // Capitalize first letter (e.g. "ene 2023" => "Ene 2023")
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     
-  } catch (error) {
+  } catch {
     return dateStr; // fallback to original if parsing fails
   }
 };

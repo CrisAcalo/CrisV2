@@ -17,13 +17,13 @@ export class MessageController {
 
     createMessage = async (req: Request, res: Response): Promise<void> => {
         // Only map allowed fields for security in creation
-        const message = await this.messageUseCases.createMessage({
+        const { message, notification } = await this.messageUseCases.createMessage({
             senderName: req.body.senderName,
             senderEmail: req.body.senderEmail,
             subject: req.body.subject,
             content: req.body.content
         });
-        res.status(201).json({ status: 'success', data: message });
+        res.status(201).json({ status: 'success', data: { id: message.id }, notification });
     }
 
     updateMessage = async (req: Request, res: Response): Promise<void> => {

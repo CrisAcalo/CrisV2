@@ -1,195 +1,171 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useEffect, useId, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Modal, Input, Button, SkillSelector } from '../common';
+import { Modal } from '../common/Modal';
+import { SkillSelector } from '../common/SkillSelector';
 import { useCreateProject, useUpdateProject } from '../../hooks/useProjects';
 import { useSkills } from '../../hooks/useSkills';
-import { Project } from '../../../domain/entities';
+import type { Project, ProjectCaseStudy } from '../../../domain/entities';
+import { AdminFormActions, AdminInput, AdminTextarea } from './AdminFormFields';
+import { httpUrlField, showFormError } from './adminFormValidation';
+import styles from './AdminDialog.module.css';
 
-const projectSchema = z.object({
-    title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
-    description: z.string().optional(),
-    imageUrl: z.string().url('Debe ser una URL válida').or(z.literal('')).optional(),
-    liveUrl: z.string().url('Debe ser una URL válida').or(z.literal('')).optional(),
-    repoUrl: z.string().url('Debe ser una URL válida').or(z.literal('')).optional(),
-    skillIds: z.array(z.string()),
-    isPublished: z.boolean(),
+const caseStudyFields = [
+  { key: 'problem', label: 'Problema' },
+  { key: 'contribution', label: 'Mi aporte' },
+  { key: 'decision', label: 'Decisión técnica' },
+  { key: 'outcome', label: 'Resultado' },
+] as const;
+const caseStudyText = z.string().trim().max(900, 'Usa un máximo de 900 caracteres');
+
+const schema = z.object({
+  title: z.string().trim().min(1, 'Escribe el título del proyecto'),
+  description: z.string().trim(),
+  imageUrl: httpUrlField,
+  liveUrl: httpUrlField,
+  repoUrl: httpUrlField,
+  skillIds: z.array(z.string()),
+  isPublished: z.boolean(),
+  isFeatured: z.boolean(),
+  caseStudy: z.object({ problem: caseStudyText, contribution: caseStudyText, decision: caseStudyText, outcome: caseStudyText }),
 });
 
-type ProjectFormValues = z.infer<typeof projectSchema>;
-
-interface ProjectFormModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    projectToEdit?: Project | null;
-}
-
-export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({ isOpen, onClose, projectToEdit }) => {
-    const createMutation = useCreateProject();
-    const updateMutation = useUpdateProject();
-    const { data: skillsData } = useSkills(false);
-    const allSkills = skillsData?.data || [];
-
-    const {
-        register,
-        handleSubmit,
-        control,
-        reset,
-        setError,
-        formState: { errors },
-    } = useForm<ProjectFormValues>({
-        resolver: zodResolver(projectSchema) as any,
-        defaultValues: {
-            title: '', description: '', imageUrl: '', liveUrl: '', repoUrl: '',
-            skillIds: [], isPublished: false,
-        },
-    });
-
-    useEffect(() => {
-        if (projectToEdit) {
-            reset({
-                title: projectToEdit.title,
-                description: projectToEdit.description || '',
-                imageUrl: projectToEdit.imageUrl || '',
-                liveUrl: projectToEdit.liveUrl || '',
-                repoUrl: projectToEdit.repoUrl || '',
-                skillIds: projectToEdit.skills?.map(s => s.id) ?? [],
-                isPublished: projectToEdit.isPublished,
-            });
-        } else {
-            reset({ title: '', description: '', imageUrl: '', liveUrl: '', repoUrl: '', skillIds: [], isPublished: false });
-        }
-    }, [projectToEdit, reset, isOpen]);
-
-    const onSubmit = async (data: ProjectFormValues) => {
-        // Convert empty URL strings to undefined so backend skips validation on them
-        const nullify = (v?: string | null) => (v?.trim() === '' ? undefined : v || undefined);
-        const payload = {
-            ...data,
-            liveUrl: nullify(data.liveUrl),
-            repoUrl: nullify(data.repoUrl),
-            imageUrl: nullify(data.imageUrl),
-        };
-
-        try {
-            if (projectToEdit) {
-                await updateMutation.mutateAsync({ id: projectToEdit.id, data: payload });
-                toast.success('Proyecto actualizado correctamente');
-            } else {
-                await createMutation.mutateAsync(payload as any);
-                toast.success('Proyecto creado exitosamente');
-            }
-            onClose();
-        } catch (error: any) {
-            if (error.response?.status === 400 && error.response.data?.errors) {
-                error.response.data.errors.forEach((err: any) => {
-                    if (err.path) {
-                        const fieldName = err.path.replace('body.', '') as keyof ProjectFormValues;
-                        setError(fieldName, { type: 'server', message: err.message });
-                    } else {
-                        toast.error(err.message || 'Error de validación del servidor');
-                    }
-                });
-            } else {
-                toast.error(error.response?.data?.message || 'Ocurrió un error inesperado');
-            }
-        }
-    };
-
-    const isPending = createMutation.isPending || updateMutation.isPending;
-
-    return (
-        <Modal isOpen={isOpen} onClose={onClose} title={projectToEdit ? 'Editar Proyecto' : 'Nuevo Proyecto'} size="xl">
-            <form onSubmit={handleSubmit(onSubmit)} className="w-full">
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    {/* ── Left Column ── */}
-                    <div className="flex flex-col gap-4">
-
-                        <Input label="Título *" placeholder="Mi Proyecto..." {...register('title')} error={errors.title?.message} />
-
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Descripción</label>
-                            <textarea
-                                rows={5}
-                                className="w-full rounded-lg border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2"
-                                style={{ background: 'var(--surface-raised)', borderColor: errors.description ? '#f87171' : 'var(--surface-border)', color: 'var(--text-primary)' }}
-                                placeholder="Describe los objetivos y logros..."
-                                {...register('description')}
-                            />
-                            {errors.description && <span className="text-xs text-red-400">{errors.description.message}</span>}
-                        </div>
-
-                        <Input label="URL del Proyecto (Live)" placeholder="https://..." {...register('liveUrl')} error={errors.liveUrl?.message} />
-                        <Input label="URL del Repositorio (GitHub)" placeholder="https://github.com/..." {...register('repoUrl')} error={errors.repoUrl?.message} />
-
-                    </div>
-
-                    {/* ── Right Column ── */}
-                    <div className="flex flex-col gap-4">
-                        <Input label="URL de Imagen (Thumbnail)" placeholder="https://ejemplo.com/imagen.jpg" {...register('imageUrl')} error={errors.imageUrl?.message} />
-
-                        <div className="flex flex-col gap-2 flex-1">
-                            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                                Skills del Proyecto
-                            </label>
-                            <Controller
-                                name="skillIds"
-                                control={control}
-                                render={({ field }) => (
-                                    <SkillSelector
-                                        skills={allSkills}
-                                        selectedIds={field.value}
-                                        onChange={field.onChange}
-                                    />
-                                )}
-                            />
-                            {errors.skillIds && <span className="text-xs text-red-400">{errors.skillIds.message}</span>}
-                        </div>
-
-                        <div
-                            className="flex items-center gap-3 p-4 rounded-xl border mt-auto"
-                            style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}
-                        >
-                            <Controller
-                                name="isPublished"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="checkbox" id="isPublished"
-                                        checked={field.value}
-                                        onChange={e => field.onChange(e.target.checked)}
-                                        className="w-4 h-4 rounded accent-[var(--accent)]"
-                                    />
-                                )}
-                            />
-                            <div>
-                                <label htmlFor="isPublished" className="text-sm font-semibold cursor-pointer" style={{ color: 'var(--text-primary)' }}>
-                                    Publicar proyecto
-                                </label>
-                                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                                    Visible en el portafolio público
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-5 mt-5 border-t" style={{ borderColor: 'var(--surface-border)' }}>
-                    <Button variant="secondary-light" type="button" onClick={onClose} disabled={isPending}>
-                        Cancelar
-                    </Button>
-                    <Button variant="primary" type="submit" disabled={isPending}>
-                        {isPending ? 'Guardando...' : projectToEdit ? 'Guardar Cambios' : 'Crear Proyecto'}
-                    </Button>
-                </div>
-            </form>
-        </Modal>
-    );
+type Values = z.infer<typeof schema>;
+const defaults: Values = {
+  title: '', description: '', imageUrl: '', liveUrl: '', repoUrl: '', skillIds: [], isPublished: false, isFeatured: false,
+  caseStudy: { problem: '', contribution: '', decision: '', outcome: '' },
 };
+
+export function ProjectFormModal({ isOpen, onClose, projectToEdit }: {
+  isOpen: boolean;
+  onClose: () => void;
+  projectToEdit?: Project | null;
+}) {
+  const create = useCreateProject();
+  const update = useUpdateProject();
+  const skills = useSkills();
+  const [creatingSkill, setCreatingSkill] = useState(false);
+  const featureHint = useId();
+  const { register, handleSubmit, control, reset, setError, formState: { dirtyFields, errors, isSubmitting } } = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: defaults,
+  });
+  const isPublished = useWatch({ control, name: 'isPublished' });
+  const busy = isSubmitting || creatingSkill;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    reset(projectToEdit ? {
+      title: projectToEdit.title,
+      description: projectToEdit.description ?? '',
+      imageUrl: projectToEdit.imageUrl ?? '',
+      liveUrl: projectToEdit.liveUrl ?? '',
+      repoUrl: projectToEdit.repoUrl ?? '',
+      skillIds: projectToEdit.skills?.map((skill) => skill.id) ?? [],
+      isPublished: projectToEdit.isPublished,
+      isFeatured: projectToEdit.isFeatured ?? false,
+      caseStudy: { ...defaults.caseStudy, ...projectToEdit.caseStudy },
+    } : defaults);
+  }, [isOpen, projectToEdit, reset]);
+
+  async function submit(data: Values) {
+    const caseStudy: ProjectCaseStudy = {};
+    for (const { key } of caseStudyFields) {
+      if (data.caseStudy[key]) caseStudy[key] = data.caseStudy[key];
+    }
+    const payload = {
+      ...data,
+      imageUrl: data.imageUrl || null,
+      repoUrl: data.repoUrl || null,
+      liveUrl: data.liveUrl || null,
+      // Saving an unrelated edit must not reclaim the spotlight from another project.
+      isFeatured: !projectToEdit || dirtyFields.isFeatured ? data.isPublished && data.isFeatured : undefined,
+      caseStudy: Object.keys(caseStudy).length ? caseStudy : null,
+    };
+    try {
+      if (projectToEdit) {
+        await update.mutateAsync({ id: projectToEdit.id, data: payload });
+      } else {
+        await create.mutateAsync(payload);
+      }
+      toast.success(projectToEdit ? 'Proyecto actualizado' : 'Proyecto creado');
+      onClose();
+    } catch (error) {
+      showFormError(error, schema.shape, setError, 'No se pudo guardar el proyecto.');
+    }
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} busy={busy} title={projectToEdit ? 'Editar proyecto' : 'Nuevo proyecto'} size="xl">
+      <form noValidate className={styles.form} onSubmit={handleSubmit(submit)}>
+        <fieldset className={`${styles.fieldset} ${styles.fields}`} disabled={isSubmitting}>
+          <div className={styles.fieldset}>
+            <AdminInput label="Título" required autofocus {...register('title')} error={errors.title?.message} />
+            <AdminTextarea label="Descripción" rows={4} {...register('description')} error={errors.description?.message} />
+            <label className={styles.check}><input type="checkbox" {...register('isPublished')} /> Publicar proyecto</label>
+            <div className={styles.field}>
+              <Controller
+                control={control}
+                name="isFeatured"
+                render={({ field }) => (
+                  <label className={styles.check}>
+                    <input
+                      type="checkbox"
+                      name={field.name}
+                      ref={field.ref}
+                      onBlur={field.onBlur}
+                      checked={isPublished && field.value}
+                      onChange={field.onChange}
+                      disabled={!isPublished}
+                      aria-describedby={featureHint}
+                    />
+                    Destacar en el portafolio
+                  </label>
+                )}
+              />
+              <p id={featureHint} className={styles.hint}>
+                {isPublished ? 'Aparecerá primero y reemplazará al destacado anterior.' : 'Publica el proyecto para poder destacarlo.'}
+              </p>
+            </div>
+          </div>
+          <div className={styles.fieldset}>
+            <AdminInput label="URL de la imagen" type="url" {...register('imageUrl')} error={errors.imageUrl?.message} />
+            <AdminInput label="URL de la demo" type="url" {...register('liveUrl')} error={errors.liveUrl?.message} />
+            <AdminInput label="URL del repositorio" type="url" {...register('repoUrl')} error={errors.repoUrl?.message} />
+          </div>
+        </fieldset>
+
+        <Controller
+          name="skillIds"
+          control={control}
+          render={({ field, fieldState }) => (
+            <SkillSelector skills={skills.data?.data ?? []} selectedIds={field.value} onChange={field.onChange}
+              disabled={isSubmitting} error={fieldState.error?.message} loading={skills.isLoading} loadError={skills.isError}
+              onRetry={() => void skills.refetch()} onCreatingChange={setCreatingSkill} />
+          )}
+        />
+        <details className={styles.disclosure} open={errors.caseStudy ? true : undefined}>
+          <summary>Caso de estudio <span className={styles.hint}>(opcional)</span></summary>
+          <fieldset className={`${styles.fieldset} ${styles.fields}`} disabled={isSubmitting}>
+            {caseStudyFields.map(({ key, label }) => (
+              <AdminTextarea
+                key={key}
+                label={label}
+                rows={3}
+                maxLength={900}
+                {...register(`caseStudy.${key}`)}
+                error={errors.caseStudy?.[key]?.message}
+              />
+            ))}
+          </fieldset>
+        </details>
+        {errors.root?.server?.message && <p role="alert" className={styles.notice}>{errors.root.server.message}</p>}
+        <AdminFormActions busy={busy} onClose={onClose} submitLabel={projectToEdit ? 'Guardar cambios' : 'Crear proyecto'} />
+      </form>
+    </Modal>
+  );
+}

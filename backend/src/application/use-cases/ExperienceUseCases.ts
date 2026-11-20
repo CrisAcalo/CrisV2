@@ -2,7 +2,7 @@ import { IExperienceRepository } from '../../domain/repositories/IExperienceRepo
 import { NotFoundError } from '../../domain/errors/AppError';
 import { Experience } from '../../domain/entities';
 
-export type CreateExperienceDTO = Omit<Experience, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
+export type CreateExperienceDTO = Omit<Experience, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'skills'> & { skillIds?: string[] };
 export type UpdateExperienceDTO = Partial<CreateExperienceDTO>;
 
 export class ExperienceUseCases {

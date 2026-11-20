@@ -2,28 +2,14 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 export const seedUsers = async (prisma: PrismaClient) => {
-    const adminPassword = await bcrypt.hash('admin123', 10);
-    const testPassword = await bcrypt.hash('testuser123', 10);
+    const email = process.env.SEED_ADMIN_EMAIL;
+    const password = process.env.SEED_ADMIN_PASSWORD;
+    if (!email || !password || password.length < 12 || password === 'admin123') {
+        throw new Error('Set SEED_ADMIN_EMAIL and a unique SEED_ADMIN_PASSWORD of at least 12 characters');
+    }
 
-    const adminUser = await prisma.user.upsert({
-        where: { email: 'admin@portfolio.com' },
-        update: {},
-        create: {
-            email: 'admin@portfolio.com',
-            passwordHash: adminPassword,
-            role: 'ADMIN',
-        },
+    await prisma.user.create({
+        data: { email, passwordHash: await bcrypt.hash(password, 12), role: 'ADMIN' },
     });
-
-    const basicUser = await prisma.user.upsert({
-        where: { email: 'guest@portfolio.com' },
-        update: {},
-        create: {
-            email: 'guest@portfolio.com',
-            passwordHash: testPassword,
-            role: 'BASIC',
-        },
-    });
-
-    console.log(`✅ Usuarios creados: ${adminUser.email}, ${basicUser.email}`);
+    console.log(`✅ Administrador local creado: ${email}`);
 };

@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardProps extends HTMLMotionProps<'div'> {
   hover?: boolean;
 }
 
@@ -15,7 +15,7 @@ export const Card: React.FC<CardProps> = ({ children, className = '', hover = fa
       animate={{ opacity: 1, y: 0 }}
       className={`card-surface ${hover ? 'hover:shadow-lg cursor-pointer' : ''} ${className}`}
       style={{ padding: defaultPadding, ...style }}
-      {...(rest as any)}
+      {...rest}
     >
       {children}
     </motion.div>

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { SkillUseCases } from '../../../application/use-cases/SkillUseCases';
+import { NotFoundError } from '../../../domain/errors/AppError';
 
 export class SkillController {
     constructor(private skillUseCases: SkillUseCases) { }
@@ -7,12 +8,26 @@ export class SkillController {
     getAllSkills = async (req: Request, res: Response): Promise<void> => {
         const includeDeleted = req.query.deleted === 'true';
         const skills = await this.skillUseCases.getAllSkills(includeDeleted);
-        res.json({ status: 'success', data: skills });
+        const publicSkills = skills.filter(skill => skill.isPublic).map(skill => ({
+            ...skill,
+            projects: skill.projects?.filter(project => project.isPublished && !project.deletedAt),
+            experiences: skill.experiences?.filter(experience => !experience.deletedAt),
+            educations: skill.educations?.filter(education => !education.deletedAt),
+        }));
+        res.json({ status: 'success', data: req.user?.role === 'ADMIN' ? skills : publicSkills });
     }
 
     getSkillById = async (req: Request, res: Response): Promise<void> => {
         const skill = await this.skillUseCases.getSkillById(req.params['id'] as string);
-        res.json({ status: 'success', data: skill });
+        if (req.user?.role !== 'ADMIN' && !skill.isPublic) {
+            throw new NotFoundError('Skill no encontrada');
+        }
+        res.json({ status: 'success', data: req.user?.role === 'ADMIN' ? skill : {
+            ...skill,
+            projects: skill.projects?.filter(project => project.isPublished && !project.deletedAt),
+            experiences: skill.experiences?.filter(experience => !experience.deletedAt),
+            educations: skill.educations?.filter(education => !education.deletedAt),
+        } });
     }
 
     createSkill = async (req: Request, res: Response): Promise<void> => {
