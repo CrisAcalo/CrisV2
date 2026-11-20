@@ -98,7 +98,7 @@ Para correr `npm run test:security`, apunta `SECURITY_TEST_DATABASE_URL` a una b
 
 ## Despliegue Render / Neon / Netlify
 
-- En Render configura `DATABASE_URL` como secreto. `LINKEDIN_API_TOKEN` es opcional. Configura Resend para recibir avisos de contacto.
+- En Render usa `backend` como directorio raíz y `npm run build` como comando de compilación. El build instala las dependencias del lockfile cuando se ejecuta en Render y regenera el cliente de Prisma antes de compilar TypeScript. Configura `DATABASE_URL` como secreto. `LINKEDIN_API_TOKEN` es opcional. Configura Resend para recibir avisos de contacto.
 - En Netlify configura `NEXT_PUBLIC_API_URL` con la URL pública del backend en Render terminada en `/api`. Puedes usar `PORTFOLIO_API_URL` para definir la URL que usan las solicitudes desde el servidor de Next.js. La portada se genera durante el build y se revalida cada cinco minutos. Render debe responder durante el build. Si una revalidación posterior falla, Next.js conserva la última portada válida.
 - `ALLOWED_ORIGINS` es una lista de orígenes exactos separados por comas, sin rutas ni comodines. Incluye los dominios reales del formulario público. `PUBLIC_SITE_ORIGIN` es el origen HTTPS canónico que usan los enlaces de los avisos de contacto.
 - `TRUST_PROXY_HOPS` vale 0 en local y 1 en producción por defecto. Confirma el número de proxies de confianza antes de cambiarlo. Las solicitudes de login desde Netlify pueden compartir la IP de su proxy. El límite por cuenta se aplica por separado. Los límites de login residen en la memoria del proceso y se reinician con el servicio.
