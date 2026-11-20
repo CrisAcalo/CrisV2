@@ -12,7 +12,7 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://crisacalo.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://cristianacalo.netlify.app'),
   title: 'Cristian Acalo | Ingeniero de Software',
   description: 'Proyectos y trayectoria de Cristian Acalo, desarrollador de software full stack especializado en automatización e integración de modelos de lenguaje.',
   alternates: { canonical: '/' },

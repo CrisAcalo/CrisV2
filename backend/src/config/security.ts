@@ -27,7 +27,7 @@ function readInteger(name: string, fallback: number, max: number): number {
 }
 
 const production = process.env.NODE_ENV === 'production';
-const siteOrigin = 'https://crisacalo.com';
+const siteOrigin = 'https://cristianacalo.netlify.app';
 const [publicSiteOrigin, ...extraOrigins] = parseOrigins(process.env.PUBLIC_SITE_ORIGIN ?? siteOrigin, 'PUBLIC_SITE_ORIGIN');
 if (!publicSiteOrigin.startsWith('https://') || extraOrigins.length) {
     throw new Error('PUBLIC_SITE_ORIGIN must be a single HTTPS origin');
@@ -35,7 +35,7 @@ if (!publicSiteOrigin.startsWith('https://') || extraOrigins.length) {
 
 const allowedOrigins = new Set(parseOrigins(process.env.ALLOWED_ORIGINS ?? [
     siteOrigin,
-    'https://www.crisacalo.com',
+    publicSiteOrigin,
     ...(!production ? [
         'http://localhost:3000', 'http://127.0.0.1:3000',
         'http://localhost:3005', 'http://127.0.0.1:3005',

@@ -73,7 +73,7 @@ function isTrustedOrigin(request: NextRequest) {
     if (origin.origin !== supplied || !isTrustedProtocol(origin)) return false;
 
     const configured = process.env.ADMIN_SITE_ORIGIN
-      || (secure ? process.env.NEXT_PUBLIC_SITE_URL || 'https://crisacalo.com' : undefined);
+      || (secure ? process.env.NEXT_PUBLIC_SITE_URL || 'https://cristianacalo.netlify.app' : undefined);
     if (configured) {
       const expected = new URL(configured);
       return isTrustedProtocol(expected) && supplied === expected.origin;
